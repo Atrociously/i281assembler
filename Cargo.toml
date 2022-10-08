@@ -1,0 +1,12 @@
+[package]
+name = "i281assembler"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = [
+    "i281_ast"
+]
+
+[dependencies]
+i281_ast = { path = "./i281_ast"}
