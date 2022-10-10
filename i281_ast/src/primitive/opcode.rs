@@ -1,35 +1,53 @@
-use crate::type_enum;
+use crate::{type_enum, error::Error, Parse};
 
+macro_rules! opcode {
+    ($($variant:ident == $($val:literal)|+),+ $(,)?) => {
+        type_enum!(OpCode {
+            $($variant),+
+        });
 
-type_enum!(OpCode {
-    NoOp:    u8 = 0b0000,
-    InputC:  u8 = 0b0001,
-    InputCF: u8 = 0b0001,
-    InputD:  u8 = 0b0001,
-    InputDF: u8 = 0b0001,
-    
-    Move:    u8 = 0b0010,
-    LoadI:   u8 = 0b0011,
-    LoadP:   u8 = 0b0011,
+        $(impl Parse for $variant {
+            type Err = Error;
 
-    Add:     u8 = 0b0100,
-    AddI:    u8 = 0b0101,
-    Sub:     u8 = 0b0110,
-    SubI:    u8 = 0b0111,
+            fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Error> {
+                let code = input.take_while(|c| !c.is_whitespace()).collect::<String>().to_uppercase();
+                if $(code == $val)||+ {
+                    Ok(Self)
+                } else {
+                    Err(Error::InvalidOpCode)
+                }
+            }
+        })+
+    }
+}
 
-    Load:    u8 = 0b1000,
-    LoadF:   u8 = 0b1001,
-    Store:   u8 = 0b1010,
-    StoreF:  u8 = 0b1011,
+opcode! {
+    NoOp == "NOOP",
+    InputC == "INPUTC",
+    InputCF == "INPUTCF",
+    InputD == "INPUTD",
+    InputDF == "INPUTDF",
 
-    ShiftL:  u8 = 0b1100,
-    ShiftR:  u8 = 0b1100,
-    Cmp:     u8 = 0b1101,
-    Jump:    u8 = 0b1110,
-    BrE:     u8 = 0b1111,
-    BrZ:     u8 = 0b1111,
-    BrNE:    u8 = 0b1111,
-    BrNZ:    u8 = 0b1111,
-    BrG:     u8 = 0b1111,
-    BrGE:    u8 = 0b1111,
-});
+    Move == "MOVE",
+    LoadI == "LOADI",
+    LoadP == "LOADP",
+
+    Add == "ADD",
+    AddI == "ADDI",
+    Sub == "SUB",
+    SubI == "SUBI",
+
+    Load == "LOAD",
+    LoadF == "LOADF",
+    Store == "STORE",
+    StoreF == "STOREF",
+
+    ShiftL == "SHIFTL",
+    ShiftR == "SHIFTR",
+    Cmp == "CMP",
+    Jump == "JUMP",
+    BrE == "BRE" | "BRZ", // match either BRE or BRZ
+    BrNE == "BRNE" | "BRNZ", // match either BRNE or BRNZ
+    BrG == "BRG",
+    BrGE == "BRGE",
+}

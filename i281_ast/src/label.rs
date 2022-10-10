@@ -1,3 +1,5 @@
-use super::{Ident, punct};
+use super::Ident;
 
-pub struct Label(Ident, punct::Colon);
+pub struct Label {
+    pub ident: Ident,
+}

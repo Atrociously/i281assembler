@@ -1,11 +1,11 @@
 use crate::type_enum;
 
 type_enum!(Punct {
-	Dot,
-	Comma,
-	Colon,
-	SemiColon,
-	OpenBracket,
+    Dot,
+    Comma,
+    Colon,
+    SemiColon,
+    OpenBracket,
     CloseBracket,
-	Eq,
+    Eq,
 });

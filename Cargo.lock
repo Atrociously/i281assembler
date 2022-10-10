@@ -13,8 +13,13 @@ name = "i281_ast"
 version = "0.1.0"
 dependencies = [
  "either",
+ "i281_core",
  "paste",
 ]
+
+[[package]]
+name = "i281_core"
+version = "0.1.0"
 
 [[package]]
 name = "i281assembler"
