@@ -18,6 +18,18 @@ macro_rules! opcode {
                 }
             }
         })+
+
+        impl Parse for OpCode {
+            type Err = Error;
+
+            fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Error> {
+                let code = input.take_while(|c| !c.is_whitespace()).collect::<String>().to_uppercase();
+                match code.as_str() {
+                    $($($val)|+ => Ok(Self::$variant($variant)),)+
+                    _ => Err(Error::InvalidOpCode)
+                }
+            }
+        }
     }
 }
 

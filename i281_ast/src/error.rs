@@ -3,4 +3,8 @@ pub enum Error {
     InvalidLiteral,
     InvalidDirective,
     InvalidOpCode,
+    InvalidOper,
+    InvalidPunct,
+    InvalidRegister,
+    InvalidKeyword,
 }

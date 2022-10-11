@@ -1,5 +1,6 @@
 mod ident;
-mod literal;
+pub mod keyword;
+pub mod literal;
 pub mod opcode;
 mod oper;
 pub mod punct;

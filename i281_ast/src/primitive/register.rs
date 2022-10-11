@@ -1,8 +1,25 @@
+use crate::{Parse, error::Error};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
 pub enum Register {
-    A = 0b00,
-    B = 0b01,
-    C = 0b10,
-    D = 0b11,
+    A,
+    B,
+    C,
+    D,
+}
+
+impl Parse for Register {
+    type Err = Error;
+
+    fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Self::Err> {
+        let name: String = input.take_while(|c| !c.is_whitespace()).collect();
+        
+        match name.to_uppercase().as_str() {
+            "A" => Ok(Register::A),
+            "B" => Ok(Register::B),
+            "C" => Ok(Register::C),
+            "D" => Ok(Register::D),
+            _ => Err(Error::InvalidRegister),
+        }
+    }
 }

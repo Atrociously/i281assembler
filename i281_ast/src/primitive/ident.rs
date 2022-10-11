@@ -26,10 +26,8 @@ impl Parse for Ident {
         if !Self::VALID_START.contains(first) {
             return Err(Error::InvalidIdent); // check the first ident char
         }
-        let mut after = input.take_while(|c| !c.is_whitespace());
-        if after.any(|c| !Self::VALID_CHARS.contains(c)) {
-            return Err(Error::InvalidIdent); // check all the rest of the chars in the ident
-        }
+        // take everything until we encounter an invalid ident char
+        let after = input.take_while(|c| Self::VALID_CHARS.contains(*c));
         let mut ident = first.to_string();
         ident.extend(after);
         Ok(Ident(ident))

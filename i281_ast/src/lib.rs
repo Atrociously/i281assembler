@@ -7,7 +7,7 @@ mod instruction;
 mod label;
 mod variable;
 
-pub use primitive::{opcode, punct, Ident, Literal, OpCode, Oper, Punct, Register};
+pub use primitive::{opcode, punct, literal, keyword, Ident, Literal, OpCode, Oper, Punct, Register};
 
 pub use address::{Address, AddressExpr, AddressItem};
 pub use directive::Directive;
