@@ -1,6 +1,6 @@
 use i281_core::TokenIter;
 
-use crate::{keyword, Ident, Literal, ParseItem, util::parse_sep, Result};
+use crate::{keyword, util::parse_sep, Ident, Literal, ParseItem, Result};
 
 #[derive(Clone, Debug)]
 pub struct Variable {

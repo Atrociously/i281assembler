@@ -2,7 +2,7 @@ use color_eyre::Result;
 
 use i281_core::TokenIter;
 
-use crate::{Ident, Literal, Oper, Register, ParseItem, error::Error, punct, util};
+use crate::{error::Error, punct, util, Ident, Literal, Oper, ParseItem, Register};
 
 #[derive(Clone, Debug)]
 pub struct Address {
@@ -28,10 +28,13 @@ pub enum AddressExpr {
 
 impl ParseItem for Address {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let to = util::parse_surround::<punct::OpenBracket, punct::CloseBracket, _, _, _>(input, |input: &mut TokenIter<I>| {
-            AddressExpr::parse(input)
-        })?.pop().ok_or(Error::InvalidAddressExpr)?;
-        
+        let to = util::parse_surround::<punct::OpenBracket, punct::CloseBracket, _, _, _>(
+            input,
+            |input: &mut TokenIter<I>| AddressExpr::parse(input),
+        )?
+        .pop()
+        .ok_or(Error::InvalidAddressExpr)?;
+
         Ok(Self { to })
     }
 }
@@ -50,9 +53,9 @@ impl ParseItem for AddressItem {
                 Err(..) => match <Ident as crate::Parse>::parse(&mut next) {
                     Ok(ident) => Ok(Self::Var(ident)),
                     // all possible options failed this is an invalid address item
-                    Err(..) => Err(Error::InvalidAddressItem.into())
-                }
-            }
+                    Err(..) => Err(Error::InvalidAddressItem.into()),
+                },
+            },
         }
     }
 }
@@ -64,7 +67,9 @@ impl ParseItem for AddressExpr {
 
         match next {
             // we reached the closing bracket this is the final item in the expression
-            Some(s) if s.len() == 1 && s.chars().next().unwrap() == punct::CloseBracket::REPR => Ok(left),
+            Some(s) if s.len() == 1 && s.chars().next().unwrap() == punct::CloseBracket::REPR => {
+                Ok(left)
+            }
             Some(_) => {
                 let oper = Oper::parse(input)?;
                 let right = AddressExpr::parse(input)?;
@@ -74,7 +79,7 @@ impl ParseItem for AddressExpr {
                     right: Box::new(right),
                 })
             }
-            None => Err(Error::InvalidAddressExpr.into())
+            None => Err(Error::InvalidAddressExpr.into()),
         }
     }
 }

@@ -1,6 +1,6 @@
 use i281_core::TokenIter;
 
-use crate::{error::Error, ParseItem, punct, Result};
+use crate::{error::Error, punct, ParseItem, Result};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Oper {
@@ -17,7 +17,7 @@ impl ParseItem for Oper {
             match next.chars().next() {
                 Some(punct::Add::REPR) => Ok(Self::Add),
                 Some(punct::Sub::REPR) => Ok(Self::Sub),
-                _ => Err(Error::InvalidOper.into())
+                _ => Err(Error::InvalidOper.into()),
             }
         }
     }

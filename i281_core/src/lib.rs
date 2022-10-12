@@ -6,15 +6,20 @@ pub struct TokenIter<I: Iterator<Item = char>> {
     unique: fn(char) -> bool,
     skip: fn(char) -> bool,
     skip_after: char,
-    
+
     peeked: Option<Option<String>>,
-    
+
     pos: usize,
     lines_encountered: usize,
 }
 
 impl<I: Iterator<Item = char>> TokenIter<I> {
-    pub fn new_with(iter: I, unique: fn(char) -> bool, skip_after: char, skip: fn(char) -> bool) -> Self {
+    pub fn new_with(
+        iter: I,
+        unique: fn(char) -> bool,
+        skip_after: char,
+        skip: fn(char) -> bool,
+    ) -> Self {
         Self {
             iter: iter.peekable(),
             unique,
@@ -58,7 +63,9 @@ impl<I: Iterator<Item = char>> TokenIter<I> {
     fn iter_next(&mut self) -> Option<char> {
         self.pos += 1;
         let next = self.iter.next();
-        if next == Some('\n') { self.lines_encountered += 1 }
+        if next == Some('\n') {
+            self.lines_encountered += 1
+        }
         next
     }
 }
@@ -71,7 +78,7 @@ impl<I: Iterator<Item = char>> Iterator for TokenIter<I> {
         // otherwise we need to get the next token from the stream
         match self.peeked.take() {
             Some(v) => return v,
-            None => {},
+            None => {}
         }
 
         match self.iter.next() {
@@ -104,14 +111,14 @@ impl<I: Iterator<Item = char>> Iterator for TokenIter<I> {
                                 } else {
                                     *c
                                 }
-                            },
+                            }
                             // if we reach the end while creating a token string we return it
                             None => return Some(s),
                         };
                     }
                     Some(s)
                 }
-            },
+            }
             None => None,
         }
     }

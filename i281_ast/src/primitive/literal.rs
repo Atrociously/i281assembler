@@ -1,10 +1,10 @@
 use i281_core::TokenIter;
 
-use crate::{error::Error, type_enum, ParseItem, punct, Result};
+use crate::{error::Error, punct, type_enum, ParseItem, Result, util};
 
 type_enum!(Literal {
     Byte(u8),
-    ByteArray(Vec<u8>),
+    Array(Vec<Literal>),
     NotSet,
 });
 
@@ -22,17 +22,23 @@ impl ParseItem for Byte {
     }
 }
 
-impl ParseItem for ByteArray {
+impl ParseItem for Array {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let first = Byte::parse(input)?.0;
+        let first = match util::parse_either::<Byte, NotSet, _>(input)? {
+            util::Either::Left(byte) => Literal::Byte(byte),
+            util::Either::Right(ns) => Literal::NotSet(ns),
+        };
 
         let mut data = vec![first];
         let mut peeked = input.peek().map(str::chars).ok_or(Error::InvalidLiteral)?;
         while let Ok(_) = <punct::Comma as crate::Parse>::parse(&mut peeked) {
             let _next_comma = input.next(); // consume comma from input
             
-            let byte = Byte::parse(input)?;
-            data.push(byte.0);
+            let next = match util::parse_either::<Byte, NotSet, _>(input)? {
+                util::Either::Left(byte) => Literal::Byte(byte),
+                util::Either::Right(ns) => Literal::NotSet(ns),
+            };
+            data.push(next);
 
             peeked = match input.peek() {
                 Some(s) => s.chars(),
@@ -63,21 +69,32 @@ impl ParseItem for Literal {
         // try to parse a byte
         match <Byte as crate::Parse>::parse(&mut next.clone()) {
             Ok(byte) => {
-                if input.peek().map(str::chars).and_then(|mut c| c.next()) == Some(punct::Comma::REPR) {
-                    input.next();
-                    let mut arr = ByteArray::parse(input)?;
-                    arr.0.insert(0, byte.0);
-                    Ok(Self::ByteArray(arr))
+                let peeked_char = input.peek().map(str::chars).and_then(|mut c| c.next());
+                if peeked_char == Some(punct::Comma::REPR) {
+                    let _comma = input.next(); // consume the peeked comma
+                    let mut arr = Array::parse(input)?;
+                    arr.0.insert(0, Self::Byte(byte));
+                    Ok(Self::Array(arr))
                 } else {
                     Ok(Self::Byte(byte))
                 }
-            },
+            }
             // byte/array failed try not set
             Err(..) => match <NotSet as crate::Parse>::parse(&mut next) {
-                Ok(ns) => Ok(Self::NotSet(ns)),
+                Ok(ns) => {
+                    let peeked_char = input.peek().map(str::chars).and_then(|mut c| c.next());
+                    if peeked_char == Some(punct::Comma::REPR) {
+                        let _comma = input.next(); // consume the peeked comma
+                        let mut arr = Array::parse(input)?;
+                        arr.0.insert(0, Self::NotSet(ns));
+                        Ok(Self::Array(arr))
+                    } else {
+                        Ok(Self::NotSet(ns))
+                    }
+                },
                 // all possible options failed this is not a valid literal
-                Err(..) => Err(Error::InvalidLiteral.into())
-            }
+                Err(..) => Err(Error::InvalidLiteral.into()),
+            },
         }
     }
 }

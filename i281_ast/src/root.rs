@@ -4,7 +4,7 @@ use crate::{Directive, ParseItem, Result};
 
 #[derive(Clone, Debug)]
 pub struct Root {
-    pub directives: Vec<Directive>
+    pub directives: Vec<Directive>,
 }
 
 impl ParseItem for Root {

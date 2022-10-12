@@ -5,8 +5,8 @@ mod directive;
 mod error;
 mod instruction;
 mod label;
-mod variable;
 mod root;
+mod variable;
 
 mod util;
 
@@ -21,8 +21,8 @@ pub use directive::Directive;
 pub use error::Error;
 pub use instruction::Instruction;
 pub use label::Label;
-pub use variable::Variable;
 pub use root::Root;
+pub use variable::Variable;
 
 pub use color_eyre::Result;
 
@@ -53,8 +53,8 @@ macro_rules! type_enum {
 pub(crate) use type_enum;
 
 mod sealed {
-    use i281_core::TokenIter;
     use color_eyre::Result;
+    use i281_core::TokenIter;
 
     pub trait ParseItem: Sized {
         fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self>;
@@ -74,7 +74,7 @@ impl<T: ParseItem> Parse for T {
             input,
             |c| Punct::is_punct(c),
             punct::SemiColon::REPR,
-            |c| c.is_whitespace() || c.is_control()
+            |c| c.is_whitespace() || c.is_control(),
         );
         <T as ParseItem>::parse(&mut input)
     }

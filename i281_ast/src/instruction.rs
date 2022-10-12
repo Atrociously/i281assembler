@@ -1,6 +1,8 @@
 use i281_core::TokenIter;
 
-use crate::{literal, punct::Comma, Address, Ident, OpCode, ParseItem, Register, util::parse_sep, Result};
+use crate::{
+    literal, punct::Comma, util::parse_sep, Address, Ident, OpCode, ParseItem, Register, Result,
+};
 
 #[derive(Clone, Debug)]
 pub enum Instruction {

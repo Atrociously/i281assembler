@@ -1,10 +1,10 @@
 use std::{fs::File, io::BufReader};
 
-use utf8_chars::BufReadCharsExt;
-use color_eyre::Result;
 use clap::Parser;
+use color_eyre::Result;
+use utf8_chars::BufReadCharsExt;
 
-use i281_ast::{Root, Parse};
+use i281_ast::{Parse, Root};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -34,4 +34,37 @@ fn main() -> Result<()> {
     //}
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{env, fs::File, io::BufReader};
+    use walkdir::WalkDir;
+    use color_eyre::Result;
+
+    use utf8_chars::BufReadCharsExt;
+
+    use i281_ast::{Parse, Root};
+
+    #[test]
+    fn test_examples() -> Result<()> {
+        color_eyre::install()?;
+        let current_dir = env::current_dir()?;
+
+        for entry in WalkDir::new(current_dir)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|f| f.file_name().to_string_lossy().ends_with("asm"))
+        {
+            let path = entry.path();
+            let file = File::open(&path)?;
+            let mut reader = BufReader::new(file);
+            let mut chars = reader.chars().map(|c| c.expect("chars failed"));
+
+            println!("File: {:?}", path);
+            let root = Root::parse(&mut chars)?;
+            dbg!(root);
+        }
+        Ok(())
+    }
 }

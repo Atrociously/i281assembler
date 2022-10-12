@@ -7,7 +7,7 @@ macro_rules! opcode {
         });
 
         $(impl $crate::ParseItem for $variant {
-            
+
 
             fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
                 let code = input.next().ok_or($crate::Error::InvalidOpCode)?.to_uppercase();
@@ -20,7 +20,7 @@ macro_rules! opcode {
         })+
 
         impl $crate::ParseItem for OpCode {
-            
+
 
             fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
                 let code = input.next().ok_or($crate::Error::InvalidOpCode)?.to_uppercase();

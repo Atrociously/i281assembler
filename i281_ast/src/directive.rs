@@ -1,6 +1,6 @@
 use i281_core::TokenIter;
 
-use crate::{error::Error, punct, Instruction, Label, ParseItem, Variable, Ident, Result, OpCode};
+use crate::{error::Error, punct, Ident, Instruction, Label, OpCode, ParseItem, Result, Variable};
 
 // the main organizational block of assembly code
 // there are two kinds of directives data and code
@@ -12,7 +12,7 @@ pub enum Directive {
     Code {
         labels: Vec<(Label, usize)>,
         instructions: Vec<Instruction>,
-    }
+    },
 }
 
 impl ParseItem for Directive {
@@ -26,7 +26,8 @@ impl ParseItem for Directive {
                 let mut peeked = match input.peek() {
                     Some(p) => p,
                     None => return Ok(Self::Data { variables }),
-                }.chars();
+                }
+                .chars();
                 while <punct::Dot as crate::Parse>::parse(&mut peeked).is_err() {
                     // parse will consume input and affect the peeked value
                     variables.push(Variable::parse(input)?);
@@ -37,16 +38,22 @@ impl ParseItem for Directive {
                     };
                 }
                 Ok(Self::Data { variables })
-            },
+            }
             "code" => {
                 let mut index: usize = 0;
                 let mut labels = Vec::new();
                 let mut instructions = Vec::new();
-                
+
                 let mut peeked = match input.peek() {
                     Some(p) => p,
-                    None => return Ok(Self::Code { labels, instructions }),
-                }.chars();
+                    None => {
+                        return Ok(Self::Code {
+                            labels,
+                            instructions,
+                        })
+                    }
+                }
+                .chars();
                 while <punct::Dot as crate::Parse>::parse(&mut peeked.clone()).is_err() {
                     if <OpCode as crate::Parse>::parse(&mut peeked).is_ok() {
                         // opcode parsed from peeked value meaning this must be an instruction
@@ -55,7 +62,7 @@ impl ParseItem for Directive {
                             Ok(instruction) => {
                                 instructions.push(instruction);
                                 index += 1;
-                            },
+                            }
                             Err(e) => return Err(e),
                         }
                     } else {
@@ -71,12 +78,20 @@ impl ParseItem for Directive {
                     peeked = match input.peek() {
                         Some(p) => p.chars(),
                         // if we have no more instructions then we are done
-                        None => return Ok(Self::Code { labels, instructions })
+                        None => {
+                            return Ok(Self::Code {
+                                labels,
+                                instructions,
+                            })
+                        }
                     };
                 }
 
-                Ok(Self::Code { labels, instructions })
-            },
+                Ok(Self::Code {
+                    labels,
+                    instructions,
+                })
+            }
             _ => Err(Error::InvalidDirective.into()),
         }
     }

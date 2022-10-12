@@ -13,7 +13,6 @@ pub enum Register {
 impl ParseItem for Register {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
         let name = input.next().ok_or(Error::InvalidRegister)?;
-
         match name.to_uppercase().as_str() {
             "A" => Ok(Register::A),
             "B" => Ok(Register::B),

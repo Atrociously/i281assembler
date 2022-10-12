@@ -12,6 +12,7 @@ pub enum Error {
     InvalidAddressItem,
     InvalidAddressExpr,
     InvalidSurround,
+    ExpectedOneOf,
 }
 
 impl std::fmt::Display for Error {
