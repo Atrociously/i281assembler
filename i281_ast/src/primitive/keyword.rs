@@ -1,4 +1,4 @@
-use crate::{type_enum, Parse, error::Error};
+use crate::{error::Error, type_enum};
 
 macro_rules! keyword {
     ($($variant:ident == $kw:literal),+ $(,)?) => {
@@ -6,29 +6,27 @@ macro_rules! keyword {
             $($variant),+
         });
 
-        $(impl Parse for $variant {
-            type Err = Error;
-
-            fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Self::Err> {
-                let kw = input.take_while(|c| !c.is_whitespace()).collect::<String>().to_uppercase();
+        $(
+        impl $crate::ParseItem for $variant {
+            fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
+                let kw = input.next().ok_or($crate::Error::InvalidKeyword)?.to_uppercase();
 
                 if kw == $kw {
                     Ok(Self)
                 } else {
-                    Err(Error::InvalidKeyword)
+                    Err(Error::InvalidKeyword.into())
                 }
             }
-        })+
+        }
+        )+
 
-        impl Parse for Keyword {
-            type Err = Error;
-
-            fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Self::Err> {
-                let kw = input.take_while(|c| !c.is_whitespace()).collect::<String>().to_uppercase();
+        impl $crate::ParseItem for Keyword {
+            fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
+                let kw = input.next().ok_or($crate::Error::InvalidKeyword)?.to_uppercase();
 
                 match kw.as_str() {
                     $($kw => Ok(Self::$variant($variant)),)+
-                    _ => Err(Error::InvalidKeyword)
+                    _ => Err(Error::InvalidKeyword.into())
                 }
             }
         }

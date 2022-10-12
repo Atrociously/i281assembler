@@ -5,6 +5,5 @@ edition = "2021"
 
 [dependencies]
 paste = "1"
-either = "1"
-
+color-eyre = "0.6"
 i281_core = { path = "../i281_core" }

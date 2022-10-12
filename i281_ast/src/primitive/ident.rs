@@ -1,5 +1,8 @@
-use crate::{error::Error, Parse};
+use i281_core::TokenIter;
 
+use crate::{Error, ParseItem, Result};
+
+#[derive(Clone, Debug)]
 pub struct Ident(String);
 
 impl Ident {
@@ -18,18 +21,23 @@ impl AsRef<str> for Ident {
     }
 }
 
-impl Parse for Ident {
-    type Err = Error;
-
-    fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Self::Err> {
-        let first = input.next().ok_or(Error::InvalidIdent)?;
-        if !Self::VALID_START.contains(first) {
-            return Err(Error::InvalidIdent); // check the first ident char
+impl ParseItem for Ident {
+    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
+        let token = input.next().ok_or(Error::InvalidIdent)?;
+        if token.len() <= 0 {
+            // size zero ident is invalid
+            return Err(Error::InvalidIdent.into());
         }
-        // take everything until we encounter an invalid ident char
-        let after = input.take_while(|c| Self::VALID_CHARS.contains(*c));
-        let mut ident = first.to_string();
-        ident.extend(after);
-        Ok(Ident(ident))
+        // safe because token has at least size 1
+        let first = token.chars().next().unwrap();
+        if !Self::VALID_START.contains(first) {
+            // ident that does not start with valid char
+            return Err(Error::InvalidIdent.into());
+        }
+        if !token.chars().all(|c| Self::VALID_CHARS.contains(c)) {
+            // ident contains invalid characters
+            return Err(Error::InvalidIdent.into());
+        }
+        Ok(Ident(token))
     }
 }

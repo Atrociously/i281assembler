@@ -1,19 +1,19 @@
-use crate::{Parse, error::Error, punct};
+use i281_core::TokenIter;
+
+use crate::{punct, ParseItem, Result};
 
 use super::Ident;
 
+#[derive(Clone, Debug)]
 pub struct Label {
     pub ident: Ident,
 }
 
-impl Parse for Label {
-    type Err = Error;
-
-    fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Self::Err> {
+impl ParseItem for Label {
+    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
         let ident = Ident::parse(input)?;
+        // label must be immediatly followed by a colon
         let _colon = punct::Colon::parse(input)?;
-        Ok(Self {
-            ident
-        })
+        Ok(Self { ident })
     }
 }

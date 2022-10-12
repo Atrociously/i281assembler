@@ -1,4 +1,4 @@
-use crate::{type_enum, error::Error, Parse};
+use crate::type_enum;
 
 macro_rules! opcode {
     ($($variant:ident == $($val:literal)|+),+ $(,)?) => {
@@ -6,27 +6,27 @@ macro_rules! opcode {
             $($variant),+
         });
 
-        $(impl Parse for $variant {
-            type Err = Error;
+        $(impl $crate::ParseItem for $variant {
+            
 
-            fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Error> {
-                let code = input.take_while(|c| !c.is_whitespace()).collect::<String>().to_uppercase();
+            fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
+                let code = input.next().ok_or($crate::Error::InvalidOpCode)?.to_uppercase();
                 if $(code == $val)||+ {
                     Ok(Self)
                 } else {
-                    Err(Error::InvalidOpCode)
+                    Err($crate::Error::InvalidOpCode.into())
                 }
             }
         })+
 
-        impl Parse for OpCode {
-            type Err = Error;
+        impl $crate::ParseItem for OpCode {
+            
 
-            fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Error> {
-                let code = input.take_while(|c| !c.is_whitespace()).collect::<String>().to_uppercase();
+            fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
+                let code = input.next().ok_or($crate::Error::InvalidOpCode)?.to_uppercase();
                 match code.as_str() {
                     $($($val)|+ => Ok(Self::$variant($variant)),)+
-                    _ => Err(Error::InvalidOpCode)
+                    _ => Err($crate::Error::InvalidOpCode.into())
                 }
             }
         }

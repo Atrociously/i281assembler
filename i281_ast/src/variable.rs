@@ -1,22 +1,16 @@
-use crate::{Ident, Literal, Parse, error::Error, keyword};
+use i281_core::TokenIter;
 
+use crate::{keyword, Ident, Literal, ParseItem, util::parse_sep, Result};
+
+#[derive(Clone, Debug)]
 pub struct Variable {
     pub ident: Ident,
     pub value: Literal,
 }
 
-impl Parse for Variable {
-    type Err = Error;
-
-    fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self, Self::Err> {
-        let ident = Ident::parse(input)?;
-        let mut input = input.skip_while(|c| c.is_whitespace());
-        let _kw_byte = keyword::Byte::parse(&mut input)?;
-        let mut input = input.skip_while(|c| c.is_whitespace());
-        let value = Literal::parse(&mut input)?;
-        Ok(Variable {
-            ident,
-            value,
-        })
+impl ParseItem for Variable {
+    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
+        let (ident, value) = parse_sep::<Ident, keyword::Byte, Literal, I>(input)?;
+        Ok(Variable { ident, value })
     }
 }

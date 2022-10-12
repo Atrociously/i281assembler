@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum Error {
     InvalidIdent,
     InvalidLiteral,
@@ -7,4 +8,15 @@ pub enum Error {
     InvalidPunct,
     InvalidRegister,
     InvalidKeyword,
+    InvalidInstruction,
+    InvalidAddressItem,
+    InvalidAddressExpr,
+    InvalidSurround,
 }
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(self, f)
+    }
+}
+impl std::error::Error for Error {}
