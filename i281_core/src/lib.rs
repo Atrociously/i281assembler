@@ -1,4 +1,4 @@
-use std::iter::Peekable;
+use std::{iter::Peekable, str::Chars};
 
 #[derive(Clone, Debug)]
 pub struct TokenIter<I: Iterator<Item = char>> {
@@ -9,7 +9,7 @@ pub struct TokenIter<I: Iterator<Item = char>> {
 
     peeked: Option<Option<String>>,
 
-    pos: usize,
+    col: usize,
     lines_encountered: usize,
 }
 
@@ -27,7 +27,7 @@ impl<I: Iterator<Item = char>> TokenIter<I> {
             skip_after,
             peeked: None,
 
-            pos: 0,
+            col: 0,
             lines_encountered: 0,
         }
     }
@@ -52,19 +52,33 @@ impl<I: Iterator<Item = char>> TokenIter<I> {
         peeked.map(String::as_str)
     }
 
+    /// Will create a new iterator over the next token
+    /// the returned iterator is guaranteed to only ever return Some once.
+    /// It will return None if [`peek`] returns None
+    pub fn peek_to_iter_one(&mut self) -> Option<TokenIter<Chars>> {
+        let unique = self.unique.clone();
+        let skip_after = self.skip_after.clone();
+        let skip = self.skip.clone();
+        
+        self.peek().map(str::chars).map(|c| TokenIter::new_with(c.clone(), unique, skip_after, skip))
+    }
+
     pub fn line_number(&self) -> usize {
         self.lines_encountered + 1
     }
 
-    pub fn position(&self) -> usize {
-        self.pos
+    pub fn column(&self) -> usize {
+        self.col
     }
 
+    // use this to iterate over the chars on the internal iterator
+    // it keeps track of some informational state
     fn iter_next(&mut self) -> Option<char> {
-        self.pos += 1;
+        self.col += 1;
         let next = self.iter.next();
         if next == Some('\n') {
-            self.lines_encountered += 1
+            self.lines_encountered += 1;
+            self.col = 0;
         }
         next
     }
@@ -138,5 +152,19 @@ mod tests {
         assert!(iter.peek() == Some("b"));
         assert!(iter.peek() == Some("b"));
         assert!(iter.next() == Some("b".to_owned()));
+    }
+
+    #[test]
+    fn test_peek_to_iter_one() {
+        let chars = "a b, c".chars();
+        let mut iter = TokenIter::new(chars);
+
+        let peeked = iter.peek_to_iter_one();
+        let mut peek_c = peeked.unwrap();
+        assert!(peek_c.next() == Some("a".to_owned()));
+        assert!(peek_c.next() == None);
+        assert!(iter.peek() == Some("a"));
+        assert!(iter.next() == Some("a".to_owned()));
+
     }
 }

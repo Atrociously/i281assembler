@@ -61,9 +61,14 @@ mod tests {
             let mut reader = BufReader::new(file);
             let mut chars = reader.chars().map(|c| c.expect("chars failed"));
 
-            println!("File: {:?}", path);
-            let root = Root::parse(&mut chars)?;
-            dbg!(root);
+            print!("File: {:?} ", path);
+            let root = Root::parse(&mut chars);
+            if root.is_ok() {
+                println!("SUCCESS");
+            } else {
+                println!("FAILURE");
+            }
+            //dbg!(root);
         }
         Ok(())
     }

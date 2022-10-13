@@ -10,6 +10,8 @@ mod variable;
 
 mod util;
 
+mod error_improved;
+
 use i281_core::TokenIter;
 
 pub use primitive::{
