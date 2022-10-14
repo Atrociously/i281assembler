@@ -1,8 +1,8 @@
-use color_eyre::Result;
+use super::Result;
 
 use i281_core::TokenIter;
 
-use crate::{error::Error, ParseItem, Parse};
+use crate::{ParseItem, Parse, ErrorCode};
 
 pub(crate) fn parse_with_sep<A, S, B, I>(input: &mut TokenIter<I>) -> Result<(A, S, B)>
 where
@@ -46,7 +46,7 @@ where
         items.push(f(input)?);
         next = match input.peek() {
             Some(n) => n,
-            None => return Err(Error::InvalidSurround.into()),
+            None => return Err(ErrorCode::unexpected_end("surround", input)),
         }
     }
     let _close = C::parse(input)?;
@@ -65,19 +65,23 @@ where
     B: ParseItem + std::fmt::Debug,
     I: Iterator<Item = char>,
 {
-    let mut peeked = input.peek().map(str::chars).ok_or(Error::ExpectedOneOf)?;
+    let mut peeked = match input.peek().map(str::chars) {
+        Some(s) => s,
+        None => return Err(ErrorCode::unexpected_end("either", input))
+    };
     match <A as Parse>::parse(&mut peeked.clone()) {
         Ok(a) => {
             input.next(); // consume peeked
             Ok(Either::Left(a))
         },
-        Err(..) => match <B as Parse>::parse(&mut peeked) {
+        Err(e1) => match <B as Parse>::parse(&mut peeked) {
             Ok(b) => {
                 input.next(); // consume peeked
                 Ok(Either::Right(b))
             },
-            Err(..) => {
-                Err(Error::ExpectedOneOf.into())
+            Err(e2) => {
+                let msg = format!("expected either A or B but both failed, A: {}, B: {}", e1, e2);
+                Err(ErrorCode::ExpectedEither.into_err(msg, input))
             }
         }
     }

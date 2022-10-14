@@ -1,8 +1,6 @@
-use color_eyre::Result;
-
 use i281_core::TokenIter;
 
-use crate::{error::Error, punct, util, Ident, Literal, Oper, ParseItem, Register};
+use crate::{ErrorCode, punct, util, Ident, Literal, Oper, ParseItem, Register, Result};
 
 #[derive(Clone, Debug)]
 pub struct Address {
@@ -33,7 +31,7 @@ impl ParseItem for Address {
             |input: &mut TokenIter<I>| AddressExpr::parse(input),
         )?
         .pop()
-        .ok_or(Error::InvalidAddressExpr)?;
+        .ok_or(ErrorCode::AddressInvalid.into_err("no items in address brackets", input))?;
 
         Ok(Self { to })
     }
@@ -41,7 +39,7 @@ impl ParseItem for Address {
 
 impl ParseItem for AddressItem {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let next = input.next().ok_or(Error::InvalidAddressItem)?;
+        let next = input.next().ok_or(ErrorCode::unexpected_end("address_item", input))?;
         let mut next = next.chars();
         // try to parse a literal
         match <Literal as crate::Parse>::parse(&mut next.clone()) {
@@ -53,7 +51,7 @@ impl ParseItem for AddressItem {
                 Err(..) => match <Ident as crate::Parse>::parse(&mut next) {
                     Ok(ident) => Ok(Self::Var(ident)),
                     // all possible options failed this is an invalid address item
-                    Err(..) => Err(Error::InvalidAddressItem.into()),
+                    Err(..) => Err(ErrorCode::AddressItemInvalid.into_err("expected either a literal, register, or variable identifier found none", input)),
                 },
             },
         }
@@ -79,7 +77,7 @@ impl ParseItem for AddressExpr {
                     right: Box::new(right),
                 })
             }
-            None => Err(Error::InvalidAddressExpr.into()),
+            None => Err(ErrorCode::unexpected_end("address_expr", input)),
         }
     }
 }

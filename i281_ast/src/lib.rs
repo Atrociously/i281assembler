@@ -1,7 +1,7 @@
 mod primitive;
 
 mod address;
-mod directive;
+pub mod directive;
 mod error;
 mod instruction;
 mod label;
@@ -9,8 +9,6 @@ mod root;
 mod variable;
 
 mod util;
-
-mod error_improved;
 
 use i281_core::TokenIter;
 
@@ -20,15 +18,22 @@ pub use primitive::{
 
 pub use address::{Address, AddressExpr, AddressItem};
 pub use directive::Directive;
-pub use error::Error;
+pub use error::{Error, ErrorCode};
 pub use instruction::Instruction;
 pub use label::Label;
 pub use root::Root;
 pub use variable::Variable;
 
-pub use color_eyre::Result;
+//pub use color_eyre::Result;
+pub type Result<T> = std::result::Result<T, Error>;
 
 macro_rules! type_enum {
+    (@base $name:ident {$($variant:ident),*}) => {
+        #[derive(Clone, Debug)]
+        pub enum $name {
+            $($variant($variant)),*
+        }
+    };
     ($name:ident {
         $($variant:ident $(($data:ty))?),*
         $(,)?
@@ -38,24 +43,13 @@ macro_rules! type_enum {
         pub struct $variant$((pub $data))?;
         )*
 
-        paste::paste! {
-            pub trait [<$name Trait>]: sealed::Sealed {}
-        }
-
-        mod sealed {
-            pub trait Sealed {}
-        }
-
-        #[derive(Clone, Debug)]
-        pub enum $name {
-            $($variant($variant)),*
-        }
-    }
+        type_enum!(@base $name {$($variant),*});
+    };
 }
 pub(crate) use type_enum;
 
 mod sealed {
-    use color_eyre::Result;
+    use super::Result;
     use i281_core::TokenIter;
 
     pub trait ParseItem: Sized {

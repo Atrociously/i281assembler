@@ -12,18 +12,19 @@ macro_rules! punct {
 
         $(impl $crate::ParseItem for $variant {
             fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
-                let next = input.next().ok_or($crate::Error::InvalidPunct)?;
-                if next.len() != 1 {
-                    Err($crate::Error::InvalidPunct.into())
-                } else if next.chars().next().unwrap() == $char {
+                let next = input.next().ok_or($crate::ErrorCode::unexpected_end("punct", input))?;
+                // safe because tokens are guaranteed size > 0
+                if next.chars().next().unwrap() == $char {
                     Ok(Self)
                 } else {
-                    Err($crate::Error::InvalidPunct.into())
+                    Err($crate::ErrorCode::PunctInvalid.invalid_token(next, $char, input))
                 }
             }
         })+
 
         impl Punct {
+            pub const ALL: &'static [char] = &[$($char),+];
+
             pub const fn is_punct(c: char) -> bool {
                 match c {
                     $($char => true,)+
@@ -34,14 +35,11 @@ macro_rules! punct {
 
         impl ParseItem for Punct {
             fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
-                let next = input.next().ok_or($crate::Error::InvalidPunct)?;
-                if next.len() != 1 {
-                    Err($crate::Error::InvalidPunct.into())
-                } else {
-                    match next.chars().next().unwrap() {
-                        $($char => Ok(Self::$variant($variant)),)+
-                        _ => Err($crate::Error::InvalidPunct.into())
-                    }
+                let next = input.next().ok_or($crate::ErrorCode::unexpected_end("punct", input))?;
+                // safe because tokens are guaranteed size > 0
+                match next.chars().next().unwrap() {
+                    $($char => Ok(Self::$variant($variant)),)+
+                    _ => Err($crate::ErrorCode::PunctInvalid.expected_one_of(next, Self::ALL.into_iter().map(|c| c.to_string()), input))
                 }
             }
         }

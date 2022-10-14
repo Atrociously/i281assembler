@@ -7,26 +7,26 @@ macro_rules! opcode {
         });
 
         $(impl $crate::ParseItem for $variant {
-
-
             fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
-                let code = input.next().ok_or($crate::Error::InvalidOpCode)?.to_uppercase();
+                let code = input.next().ok_or($crate::ErrorCode::unexpected_end("opcode", input))?.to_uppercase();
                 if $(code == $val)||+ {
                     Ok(Self)
                 } else {
-                    Err($crate::Error::InvalidOpCode.into())
+                    Err($crate::ErrorCode::OpCodeInvalid.expected_one_of(code, [$($val),+], input))
                 }
             }
         })+
 
+        impl OpCode {
+            pub const ALL: &'static [&'static str] = &[$($($val),+),+];
+        }
+
         impl $crate::ParseItem for OpCode {
-
-
             fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
-                let code = input.next().ok_or($crate::Error::InvalidOpCode)?.to_uppercase();
+                let code = input.next().ok_or($crate::ErrorCode::unexpected_end("opcode", input))?.to_uppercase();
                 match code.as_str() {
                     $($($val)|+ => Ok(Self::$variant($variant)),)+
-                    _ => Err($crate::Error::InvalidOpCode.into())
+                    _ => Err($crate::ErrorCode::OpCodeInvalid.expected_one_of(code, Self::ALL, input))
                 }
             }
         }

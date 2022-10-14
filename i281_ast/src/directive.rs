@@ -1,18 +1,57 @@
 use i281_core::TokenIter;
 
-use crate::{error::Error, punct, Ident, Instruction, Label, OpCode, ParseItem, Result, Variable};
+use crate::{type_enum, punct, Ident, Instruction, Label, OpCode, ParseItem, Result, Variable, ErrorCode};
+
+#[derive(Clone, Debug)]
+pub struct Data {
+    pub variables: Vec<Variable>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Code {
+    pub labels: Vec<(Label, usize)>,
+    pub instructions: Vec<Instruction>,
+}
 
 // the main organizational block of assembly code
 // there are two kinds of directives data and code
-#[derive(Clone, Debug)]
-pub enum Directive {
-    Data {
-        variables: Vec<Variable>,
-    },
-    Code {
-        labels: Vec<(Label, usize)>,
-        instructions: Vec<Instruction>,
-    },
+type_enum!(@base Directive {
+    Data,
+    Code
+});
+
+impl Directive {
+    /// Returns `true` if the directive is [`Data`].
+    ///
+    /// [`Data`]: Directive::Data
+    #[must_use]
+    pub fn is_data(&self) -> bool {
+        matches!(self, Self::Data { .. })
+    }
+
+    /// Returns `true` if the directive is [`Code`].
+    ///
+    /// [`Code`]: Directive::Code
+    #[must_use]
+    pub fn is_code(&self) -> bool {
+        matches!(self, Self::Code { .. })
+    }
+
+    pub fn as_data(&self) -> Option<&Data> {
+        if let Self::Data(data) = self {
+            Some(data)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_code(&self) -> Option<&Code> {
+        if let Self::Code(code) = self {
+            Some(code)
+        } else {
+            None
+        }
+    }
 }
 
 impl ParseItem for Directive {
@@ -25,7 +64,7 @@ impl ParseItem for Directive {
                 let mut variables = Vec::new();
                 let mut peeked = match input.peek() {
                     Some(p) => p,
-                    None => return Ok(Self::Data { variables }),
+                    None => return Ok(Self::Data(Data { variables })),
                 }
                 .chars();
                 while <punct::Dot as crate::Parse>::parse(&mut peeked).is_err() {
@@ -34,10 +73,10 @@ impl ParseItem for Directive {
                     // update the peek value
                     peeked = match input.peek() {
                         Some(p) => p.chars(),
-                        None => return Ok(Self::Data { variables }),
+                        None => return Ok(Self::Data(Data { variables })),
                     };
                 }
-                Ok(Self::Data { variables })
+                Ok(Self::Data(Data{ variables }))
             }
             "code" => {
                 let mut index: usize = 0;
@@ -47,10 +86,10 @@ impl ParseItem for Directive {
                 let mut peeked = match input.peek() {
                     Some(p) => p,
                     None => {
-                        return Ok(Self::Code {
+                        return Ok(Self::Code(Code {
                             labels,
                             instructions,
-                        })
+                        }))
                     }
                 }
                 .chars();
@@ -79,20 +118,20 @@ impl ParseItem for Directive {
                         Some(p) => p.chars(),
                         // if we have no more instructions then we are done
                         None => {
-                            return Ok(Self::Code {
+                            return Ok(Self::Code(Code {
                                 labels,
                                 instructions,
-                            })
+                            }))
                         }
                     };
                 }
 
-                Ok(Self::Code {
+                Ok(Self::Code(Code {
                     labels,
                     instructions,
-                })
+                }))
             }
-            _ => Err(Error::InvalidDirective.into()),
+            _ => Err(ErrorCode::DirectiveInvalid.expected_one_of(kind.as_str(), ["data", "code"], input)),
         }
     }
 }

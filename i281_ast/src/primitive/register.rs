@@ -1,6 +1,6 @@
 use i281_core::TokenIter;
 
-use crate::{error::Error, ParseItem, Result};
+use crate::{ErrorCode, ParseItem, Result};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Register {
@@ -10,15 +10,19 @@ pub enum Register {
     D,
 }
 
+impl Register {
+    pub const ALL: &'static [&'static str] = &["A", "B", "C", "D"];
+}
+
 impl ParseItem for Register {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let name = input.next().ok_or(Error::InvalidRegister)?;
+        let name = input.next().ok_or(ErrorCode::unexpected_end("register", input))?;
         match name.to_uppercase().as_str() {
             "A" => Ok(Register::A),
             "B" => Ok(Register::B),
             "C" => Ok(Register::C),
             "D" => Ok(Register::D),
-            _ => Err(Error::InvalidRegister.into()),
+            _ => Err(ErrorCode::RegisterInvalid.expected_one_of(name, Self::ALL, input)),
         }
     }
 }

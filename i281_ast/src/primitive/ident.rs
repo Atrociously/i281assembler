@@ -1,6 +1,6 @@
 use i281_core::TokenIter;
 
-use crate::{Error, ParseItem, Result};
+use crate::{ErrorCode, ParseItem, Result};
 
 #[derive(Clone, Debug)]
 pub struct Ident(String);
@@ -23,20 +23,16 @@ impl AsRef<str> for Ident {
 
 impl ParseItem for Ident {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let token = input.next().ok_or(Error::InvalidIdent)?;
-        if token.len() <= 0 {
-            // size zero ident is invalid
-            return Err(Error::InvalidIdent.into());
-        }
+        let token = input.next().ok_or(ErrorCode::unexpected_end("ident", input))?;
         // safe because token has at least size 1
         let first = token.chars().next().unwrap();
         if !Self::VALID_START.contains(first) {
             // ident that does not start with valid char
-            return Err(Error::InvalidIdent.into());
+            return Err(ErrorCode::IdentInvalidStart.into_err("ident must start with 'a-z'|'A-Z'|'_'", input));
         }
         if !token.chars().all(|c| Self::VALID_CHARS.contains(c)) {
             // ident contains invalid characters
-            return Err(Error::InvalidIdent.into());
+            return Err(ErrorCode::IdentInvalidChar.into_err("ident must only contain 'a-z'|'A-Z'|'_'|'-'", input));
         }
         Ok(Ident(token))
     }
