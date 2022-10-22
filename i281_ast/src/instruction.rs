@@ -5,6 +5,7 @@ use crate::{
 };
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Instruction {
     NoOp,
     InputC(Address),
@@ -13,7 +14,7 @@ pub enum Instruction {
     InputDF(Address),
     Move(Register, Register),
     LoadI(Register, literal::Byte),
-    LoadP(Register, literal::Byte), // unsure about this one still
+    LoadP(Register, literal::Byte),
     Add(Register, Register),
     AddI(Register, literal::Byte),
     Sub(Register, Register),
@@ -32,9 +33,11 @@ pub enum Instruction {
     BrGE(Ident),
 }
 
-impl ParseItem for Instruction {
-    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let opcode = OpCode::parse(input)?;
+impl Instruction {
+    pub(crate) fn parse_after_opcode<I>(opcode: OpCode, input: &mut TokenIter<I>) -> Result<Self>
+    where
+        I: Iterator<Item = char>,
+    {
         match opcode {
             OpCode::NoOp(..) => Ok(Self::NoOp),
             OpCode::InputC(..) => {
@@ -123,12 +126,19 @@ impl ParseItem for Instruction {
             }
             OpCode::BrG(..) => {
                 let label = Ident::parse(input)?;
-                Ok(Self::Jump(label))
+                Ok(Self::BrG(label))
             }
             OpCode::BrGE(..) => {
                 let label = Ident::parse(input)?;
-                Ok(Self::Jump(label))
+                Ok(Self::BrGE(label))
             }
         }
+    }
+}
+
+impl ParseItem for Instruction {
+    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
+        let opcode = OpCode::parse(input)?;
+        Self::parse_after_opcode(opcode, input)
     }
 }

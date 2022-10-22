@@ -30,6 +30,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 macro_rules! type_enum {
     (@base $name:ident {$($variant:ident),*}) => {
         #[derive(Clone, Debug)]
+        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
         pub enum $name {
             $($variant($variant)),*
         }
@@ -40,6 +41,7 @@ macro_rules! type_enum {
     }) => {
         $(
         #[derive(Clone, Debug)]
+        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
         pub struct $variant$((pub $data))?;
         )*
 

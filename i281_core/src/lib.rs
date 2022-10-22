@@ -55,7 +55,7 @@ impl<I: Iterator<Item = char>> TokenIter<I> {
     /// Will create a new iterator over the next token
     /// the returned iterator is guaranteed to only ever return Some once.
     /// It will return None if [`peek`] returns None
-    pub fn peek_to_iter_one(&mut self) -> Option<TokenIter<Chars>> {
+    pub fn peek_to_iter_once(&mut self) -> Option<TokenIter<Chars>> {
         let unique = self.unique.clone();
         let skip_after = self.skip_after.clone();
         let skip = self.skip.clone();
@@ -155,11 +155,11 @@ mod tests {
     }
 
     #[test]
-    fn test_peek_to_iter_one() {
+    fn test_peek_to_iter_once() {
         let chars = "a b, c".chars();
         let mut iter = TokenIter::new(chars);
 
-        let peeked = iter.peek_to_iter_one();
+        let peeked = iter.peek_to_iter_once();
         let mut peek_c = peeked.unwrap();
         assert!(peek_c.next() == Some("a".to_owned()));
         assert!(peek_c.next() == None);

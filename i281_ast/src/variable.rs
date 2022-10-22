@@ -3,6 +3,7 @@ use i281_core::TokenIter;
 use crate::{keyword, util::parse_sep, Ident, Literal, ParseItem, Result};
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Variable {
     pub ident: Ident,
     pub value: Literal,

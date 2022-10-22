@@ -3,25 +3,93 @@ use i281_core::TokenIter;
 use crate::{ErrorCode, punct, util, Ident, Literal, Oper, ParseItem, Register, Result};
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Address {
     pub to: AddressExpr,
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum AddressItem {
     Var(Ident),
     Reg(Register),
     Lit(Literal),
 }
 
+impl AddressItem {
+    /// Returns true if the address item can be evaluated at compile time
+    pub fn is_const(&self) -> bool {
+        matches!(self, Self::Var(..) | Self::Lit(..))
+    }
+
+    pub fn as_var(&self) -> Option<&Ident> {
+        if let Self::Var(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_reg(&self) -> Option<&Register> {
+        if let Self::Reg(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_lit(&self) -> Option<&Literal> {
+        if let Self::Lit(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum AddressExpr {
     Item(AddressItem),
     Expr {
-        left: Box<AddressExpr>,
+        left: AddressItem,
         oper: Oper,
         right: Box<AddressExpr>,
     },
+}
+
+impl AddressExpr {
+    pub fn is_const(&self) -> bool {
+        self.iter().all(|(item, _)| item.is_const())
+    }
+
+    pub fn iter(&self) -> AddrIter {
+        AddrIter {
+            current: Some(self),
+        }
+    }
+}
+
+pub struct AddrIter<'a> {
+    current: Option<&'a AddressExpr>,
+}
+
+impl<'a> Iterator for AddrIter<'a> {
+    type Item = (&'a AddressItem, Option<&'a Oper>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.current.as_ref() {
+            Some(AddressExpr::Item(item)) => {
+                self.current = None;
+                Some((item, None))
+            },
+            Some(AddressExpr::Expr { left, oper, right }) => {
+                self.current = Some(right);
+                Some((left, Some(oper)))
+            },
+            None => { None }
+        }
+    }
 }
 
 impl ParseItem for Address {
@@ -60,19 +128,19 @@ impl ParseItem for AddressItem {
 
 impl ParseItem for AddressExpr {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let left = AddressItem::parse(input).map(Self::Item)?;
+        let left = AddressItem::parse(input)?;
         let next = input.peek();
 
         match next {
             // we reached the closing bracket this is the final item in the expression
             Some(s) if s.len() == 1 && s.chars().next().unwrap() == punct::CloseBracket::REPR => {
-                Ok(left)
+                Ok(Self::Item(left))
             }
             Some(_) => {
                 let oper = Oper::parse(input)?;
                 let right = AddressExpr::parse(input)?;
                 Ok(Self::Expr {
-                    left: Box::new(left),
+                    left,
                     oper,
                     right: Box::new(right),
                 })

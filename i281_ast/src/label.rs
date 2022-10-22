@@ -5,6 +5,7 @@ use crate::{punct, ParseItem, Result};
 use super::Ident;
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Label {
     pub ident: Ident,
 }

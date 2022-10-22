@@ -3,11 +3,24 @@ use std::{fs::File, io::BufReader};
 use clap::Parser;
 use color_eyre::Result;
 use utf8_chars::BufReadCharsExt;
+mod compiler;
+mod error;
+mod static_analysis;
 
 use i281_ast::{Parse, Root};
 
+#[derive(clap::ValueEnum, Clone, Copy, Debug, Default)]
+enum OutputKind {
+    JsonAst,
+    DebugInfo,
+    #[default]
+    HwVerilog,
+}
+
 #[derive(Parser, Debug)]
 struct Args {
+    #[arg(long, value_enum, default_value_t)]
+    output_kind: OutputKind,
     filename: String,
 }
 
@@ -21,17 +34,15 @@ fn main() -> Result<()> {
     let mut chars = reader.chars().map(|c| c.expect("chars failed"));
 
     let root = Root::parse(&mut chars)?;
-    dbg!(root);
-    //let mut input = TokenIter::new_with(
-    //    chars,
-    //    |c| Punct::is_punct(c),
-    //    ';',
-    //    |c| c.is_whitespace() || c.is_control()
-    //);
 
-    //while let Some(token) = input.next() {
-    //    dbg!(token);
-    //}
+    match args.output_kind {
+        OutputKind::JsonAst => {
+            println!("{}", serde_json::to_string(&root)?);
+        },
+        OutputKind::DebugInfo => {},
+        OutputKind::HwVerilog => {},
+    }
+    dbg!(root);
 
     Ok(())
 }

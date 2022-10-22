@@ -3,11 +3,13 @@ use i281_core::TokenIter;
 use crate::{type_enum, punct, Ident, Instruction, Label, OpCode, ParseItem, Result, Variable, ErrorCode};
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Data {
     pub variables: Vec<Variable>,
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Code {
     pub labels: Vec<(Label, usize)>,
     pub instructions: Vec<Instruction>,
@@ -94,6 +96,7 @@ impl ParseItem for Directive {
                 }
                 .chars();
                 while <punct::Dot as crate::Parse>::parse(&mut peeked.clone()).is_err() {
+                    // unwrap is ok because peek returned some
                     if <OpCode as crate::Parse>::parse(&mut peeked).is_ok() {
                         // opcode parsed from peeked value meaning this must be an instruction
                         // without a label

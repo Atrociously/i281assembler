@@ -2,7 +2,9 @@ use i281_core::TokenIter;
 
 use crate::{ErrorCode, ParseItem, Result};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct Ident(String);
 
 impl Ident {

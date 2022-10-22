@@ -3,6 +3,7 @@ use i281_core::TokenIter;
 use crate::{Directive, ParseItem, Result, directive, ErrorCode};
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Root {
     pub data: Option<directive::Data>,
     pub code: directive::Code,

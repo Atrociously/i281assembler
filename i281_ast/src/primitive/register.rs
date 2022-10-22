@@ -3,6 +3,7 @@ use i281_core::TokenIter;
 use crate::{ErrorCode, ParseItem, Result};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Register {
     A,
     B,
