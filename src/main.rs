@@ -2,12 +2,14 @@ use std::{fs::File, io::BufReader};
 
 use clap::Parser;
 use color_eyre::Result;
-use utf8_chars::BufReadCharsExt;
 mod compiler;
 mod error;
 mod static_analysis;
 
-use i281_ast::{Parse, Root};
+use i281_ast::Root;
+use i281_core::BufReadCharsExt;
+
+use crate::compiler::compile_ast;
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug, Default)]
 enum OutputKind {
@@ -39,10 +41,13 @@ fn main() -> Result<()> {
         OutputKind::JsonAst => {
             println!("{}", serde_json::to_string(&root)?);
         },
-        OutputKind::DebugInfo => {},
-        OutputKind::HwVerilog => {},
+        OutputKind::DebugInfo => {
+            dbg!(root);
+        },
+        OutputKind::HwVerilog => {
+            compile_ast(root)
+        },
     }
-    dbg!(root);
 
     Ok(())
 }
@@ -53,9 +58,8 @@ mod tests {
     use walkdir::WalkDir;
     use color_eyre::Result;
 
-    use utf8_chars::BufReadCharsExt;
-
-    use i281_ast::{Parse, Root};
+    use i281_core::BufReadCharsExt;
+    use i281_ast::Root;
 
     #[test]
     fn test_examples() -> Result<()> {

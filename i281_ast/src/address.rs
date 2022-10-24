@@ -1,6 +1,6 @@
 use i281_core::TokenIter;
 
-use crate::{ErrorCode, punct, util, Ident, Literal, Oper, ParseItem, Register, Result};
+use crate::{ErrorCode, punct, util, literal, Ident, Oper, ParseItem, Register, Result};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -13,7 +13,7 @@ pub struct Address {
 pub enum AddressItem {
     Var(Ident),
     Reg(Register),
-    Lit(Literal),
+    Lit(literal::Byte),
 }
 
 impl AddressItem {
@@ -38,7 +38,7 @@ impl AddressItem {
         }
     }
 
-    pub fn as_lit(&self) -> Option<&Literal> {
+    pub fn as_lit(&self) -> Option<&literal::Byte> {
         if let Self::Lit(v) = self {
             Some(v)
         } else {
@@ -110,7 +110,7 @@ impl ParseItem for AddressItem {
         let next = input.next().ok_or(ErrorCode::unexpected_end("address_item", input))?;
         let mut next = next.chars();
         // try to parse a literal
-        match <Literal as crate::Parse>::parse(&mut next.clone()) {
+        match <literal::Byte as crate::Parse>::parse(&mut next.clone()) {
             Ok(lit) => Ok(Self::Lit(lit)),
             // literal failed try a register
             Err(..) => match <Register as crate::Parse>::parse(&mut next.clone()) {

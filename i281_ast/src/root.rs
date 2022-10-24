@@ -9,6 +9,12 @@ pub struct Root {
     pub code: directive::Code,
 }
 
+impl Root {
+    pub fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self> {
+        <Self as crate::Parse>::parse(input)
+    }
+}
+
 impl ParseItem for Root {
     fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
         let mut data: Option<directive::Data> = None;

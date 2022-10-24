@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
-use i281_ast::{Root, Instruction, AddressExpr, AddressItem};
+use i281_ast::{Root, Instruction};
+
+use crate::static_analysis::StaticAnalyzer;
 
 pub fn compile_ast(root: Root) {
-    let vars = {
+    let vars: Vec<_> = {
         let num_vars = root.data.as_ref().map(|d| d.variables.len()).unwrap_or(0);
         let mut variables = HashMap::with_capacity(num_vars);
 
@@ -13,17 +15,27 @@ pub fn compile_ast(root: Root) {
                 panic!("variable name clash");
             }
         }
-        variables
+        variables.into_values().collect()
     };
+
+    let analyzer = StaticAnalyzer::new(&vars);
 
     for instruction in root.code.instructions {
         match instruction {
             Instruction::NoOp => {},
             Instruction::InputC(addr) => {
-                if !addr.to.is_const() {
-                    panic!("inputc non const address")
-                }
+                analyzer.analyze_const_address(&addr).unwrap();
             }
+            Instruction::InputCF(_addr) => {
+                // non const address
+            }
+            Instruction::InputD(addr) => {
+                analyzer.analyze_const_address(&addr).unwrap();
+            }
+            Instruction::InputDF(_addr) => {
+                // non const address
+            }
+            Instruction::Move(_rx, _ry) => {}
             _ => todo!()
         }
     }

@@ -13,8 +13,6 @@ members = [
 i281_ast = { path = "./i281_ast", features = ["serde"] }
 i281_core = { path = "./i281_core" }
 
-utf8-chars = "2"
-
 thiserror = "1"
 color-eyre = "0.6"
 

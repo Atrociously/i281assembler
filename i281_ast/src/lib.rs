@@ -10,7 +10,7 @@ mod variable;
 
 mod util;
 
-use i281_core::TokenIter;
+use i281_core::{TokenIter, type_enum};
 
 pub use primitive::{
     keyword, literal, opcode, punct, Ident, Literal, OpCode, Oper, Punct, Register,
@@ -27,29 +27,7 @@ pub use variable::Variable;
 //pub use color_eyre::Result;
 pub type Result<T> = std::result::Result<T, Error>;
 
-macro_rules! type_enum {
-    (@base $name:ident {$($variant:ident),*}) => {
-        #[derive(Clone, Debug)]
-        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-        pub enum $name {
-            $($variant($variant)),*
-        }
-    };
-    ($name:ident {
-        $($variant:ident $(($data:ty))?),*
-        $(,)?
-    }) => {
-        $(
-        #[derive(Clone, Debug)]
-        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-        pub struct $variant$((pub $data))?;
-        )*
-
-        type_enum!(@base $name {$($variant),*});
-    };
-}
-pub(crate) use type_enum;
-
+// this is an implementation trait used internally
 mod sealed {
     use super::Result;
     use i281_core::TokenIter;
