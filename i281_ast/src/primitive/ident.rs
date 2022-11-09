@@ -1,6 +1,13 @@
-use i281_core::TokenIter;
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{alpha1, alphanumeric1},
+    combinator::recognize,
+    multi::many0_count,
+    sequence::pair,
+};
 
-use crate::{ErrorCode, ParseItem, Result};
+use crate::ParseNom;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -8,10 +15,6 @@ use crate::{ErrorCode, ParseItem, Result};
 pub struct Ident(String);
 
 impl Ident {
-    const VALID_CHARS: &'static str =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
-    const VALID_START: &'static str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
-
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
@@ -23,19 +26,12 @@ impl AsRef<str> for Ident {
     }
 }
 
-impl ParseItem for Ident {
-    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let token = input.next().ok_or(ErrorCode::unexpected_end("ident", input))?;
-        // safe because token has at least size 1
-        let first = token.chars().next().unwrap();
-        if !Self::VALID_START.contains(first) {
-            // ident that does not start with valid char
-            return Err(ErrorCode::IdentInvalidStart.into_err("ident must start with 'a-z'|'A-Z'|'_'", input));
-        }
-        if !token.chars().all(|c| Self::VALID_CHARS.contains(c)) {
-            // ident contains invalid characters
-            return Err(ErrorCode::IdentInvalidChar.into_err("ident must only contain 'a-z'|'A-Z'|'_'|'-'", input));
-        }
-        Ok(Ident(token))
+impl ParseNom for Ident {
+    fn parse(input: crate::Span) -> crate::IResult<Self> {
+        let (input, ident) = recognize(pair(
+            alt((alpha1, tag("_"))), // letters or underscore for start letter
+            many0_count(alt((alphanumeric1, tag("_")))), // letters nums and undserscores within
+        ))(input)?;
+        Ok((input, Self(ident.to_string())))
     }
 }

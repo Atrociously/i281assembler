@@ -1,7 +1,9 @@
 [package]
-name = "i281_core"
+name = "i281_compiler"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 utf8-chars = "2"
+
+i281_ast = { path = "../i281_ast" }

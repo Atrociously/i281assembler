@@ -5,16 +5,15 @@ edition = "2021"
 
 [workspace]
 members = [
-    "i281_core",
     "i281_ast",
+    "i281_compiler",
 ]
 
 [dependencies]
 i281_ast = { path = "./i281_ast", features = ["serde"] }
-i281_core = { path = "./i281_core" }
+i281_compiler = { path = "./i281_compiler" }
+miette = { version = "5", features = ["fancy"] }
 
-thiserror = "1"
-color-eyre = "0.6"
 
 clap = { version = "4", features = ["derive"] }
 serde_json = "1"

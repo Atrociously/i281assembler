@@ -1,6 +1,6 @@
-use i281_core::TokenIter;
+use nom::{branch::alt, bytes::complete::tag, combinator::map};
 
-use crate::{ErrorCode, ParseItem, Result};
+use crate::ParseNom;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -15,15 +15,13 @@ impl Register {
     pub const ALL: &'static [&'static str] = &["A", "B", "C", "D"];
 }
 
-impl ParseItem for Register {
-    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let name = input.next().ok_or(ErrorCode::unexpected_end("register", input))?;
-        match name.to_uppercase().as_str() {
-            "A" => Ok(Register::A),
-            "B" => Ok(Register::B),
-            "C" => Ok(Register::C),
-            "D" => Ok(Register::D),
-            _ => Err(ErrorCode::RegisterInvalid.expected_one_of(name, Self::ALL, input)),
-        }
+impl ParseNom for Register {
+    fn parse(input: crate::Span) -> crate::IResult<Self> {
+        alt((
+            map(tag("A"), |_| Self::A),
+            map(tag("B"), |_| Self::B),
+            map(tag("C"), |_| Self::C),
+            map(tag("D"), |_| Self::D),
+        ))(input)
     }
 }

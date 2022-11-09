@@ -1,22 +1,14 @@
-use std::{fs::File, io::BufReader};
-
 use clap::Parser;
-use color_eyre::Result;
-mod compiler;
-mod error;
-mod static_analysis;
 
-use i281_ast::Root;
-use i281_core::BufReadCharsExt;
-
-use crate::compiler::compile_ast;
+use i281_compiler::{writers::VerilogWriter, Compiler};
+use miette::IntoDiagnostic;
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug, Default)]
 enum OutputKind {
     JsonAst,
     DebugInfo,
     #[default]
-    HwVerilog,
+    Verilog,
 }
 
 #[derive(Parser, Debug)]
@@ -26,27 +18,31 @@ struct Args {
     filename: String,
 }
 
-fn main() -> Result<()> {
-    color_eyre::install()?;
-
+fn main() -> miette::Result<()> {
     let args = Args::parse();
 
-    let file = File::open(args.filename)?;
-    let mut reader = BufReader::new(file);
-    let mut chars = reader.chars().map(|c| c.expect("chars failed"));
+    let input = std::fs::read_to_string(args.filename).into_diagnostic()?;
+    let input = input.as_str();
 
-    let root = Root::parse(&mut chars)?;
+    let compiler = Compiler::new().parse(input)?;
 
     match args.output_kind {
         OutputKind::JsonAst => {
-            println!("{}", serde_json::to_string(&root)?);
-        },
+            println!(
+                "{}",
+                serde_json::to_string(&compiler.ast()).into_diagnostic()?
+            );
+        }
         OutputKind::DebugInfo => {
-            dbg!(root);
-        },
-        OutputKind::HwVerilog => {
-            compile_ast(root)
-        },
+            dbg!(compiler.ast());
+        }
+        OutputKind::Verilog => {
+            compiler
+                .analyze()
+                .unwrap()
+                .write::<_, VerilogWriter>("")
+                .unwrap();
+        }
     }
 
     Ok(())
@@ -54,17 +50,15 @@ fn main() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::{env, fs::File, io::BufReader};
+    use miette::IntoDiagnostic;
+    use std::env;
     use walkdir::WalkDir;
-    use color_eyre::Result;
 
-    use i281_core::BufReadCharsExt;
-    use i281_ast::Root;
+    use i281_ast::{Root, ParseError};
 
     #[test]
-    fn test_examples() -> Result<()> {
-        color_eyre::install()?;
-        let current_dir = env::current_dir()?;
+    fn test_examples() -> miette::Result<()> {
+        let current_dir = env::current_dir().into_diagnostic()?;
 
         for entry in WalkDir::new(current_dir)
             .into_iter()
@@ -72,18 +66,9 @@ mod tests {
             .filter(|f| f.file_name().to_string_lossy().ends_with("asm"))
         {
             let path = entry.path();
-            let file = File::open(&path)?;
-            let mut reader = BufReader::new(file);
-            let mut chars = reader.chars().map(|c| c.expect("chars failed"));
+            let input = std::fs::read_to_string(path).into_diagnostic()?;
 
-            print!("File: {:?} ", path);
-            let root = Root::parse(&mut chars);
-            if root.is_ok() {
-                println!("SUCCESS");
-            } else {
-                println!("FAILURE");
-            }
-            //dbg!(root);
+            let _root = Root::parse(&input).map_err(ParseError::into_static)?;
         }
         Ok(())
     }

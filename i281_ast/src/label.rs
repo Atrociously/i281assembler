@@ -1,6 +1,6 @@
-use i281_core::TokenIter;
+use nom::bytes::complete::tag;
 
-use crate::{punct, ParseItem, Result};
+use crate::sealed::ParseNom;
 
 use super::Ident;
 
@@ -8,13 +8,19 @@ use super::Ident;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Label {
     pub ident: Ident,
+    pub code_addr: usize,
 }
 
-impl ParseItem for Label {
-    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let ident = Ident::parse(input)?;
-        // label must be immediatly followed by a colon
-        let _colon = punct::Colon::parse(input)?;
-        Ok(Self { ident })
+impl ParseNom for Label {
+    fn parse(input: crate::Span) -> crate::IResult<Self> {
+        let (input, ident) = Ident::parse(input)?;
+        let (input, _) = tag(":")(input)?;
+        Ok((
+            input,
+            Self {
+                ident,
+                code_addr: 0,
+            },
+        ))
     }
 }

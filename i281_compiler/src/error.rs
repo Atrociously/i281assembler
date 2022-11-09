@@ -1,9 +1,9 @@
-
 #[derive(Clone, Debug)]
 pub enum StaticAnalysis {
     NonConstAddress,
     AddressOutOfBounds,
-    UnknownVariable
+    UnknownVariable,
+    TooManyRegisters,
 }
 
 #[derive(Clone, Debug)]
@@ -18,5 +18,9 @@ impl Error {
 
     pub fn unknown_variable() -> Self {
         Self::StaticAnalysis(StaticAnalysis::UnknownVariable)
+    }
+
+    pub fn too_many_registers() -> Self {
+        Self::StaticAnalysis(StaticAnalysis::TooManyRegisters)
     }
 }

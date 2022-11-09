@@ -1,88 +1,114 @@
-use super::Result;
+use nom::{
+    bytes::complete::{is_not, tag},
+    character::complete::{line_ending, multispace0, multispace1},
+    combinator::{opt, value},
+    multi::{many0_count, many1_count},
+    sequence::{delimited, pair, preceded, terminated},
+};
 
-use i281_core::TokenIter;
+use crate::Span;
 
-use crate::{ParseItem, Parse, ErrorCode};
-
-pub(crate) fn parse_with_sep<A, S, B, I>(input: &mut TokenIter<I>) -> Result<(A, S, B)>
+pub(crate) fn ws0<I, O, F, E>(f: F) -> impl FnMut(I) -> nom::IResult<I, O, E>
 where
-    A: ParseItem + std::fmt::Debug, // before seperator
-    B: ParseItem + std::fmt::Debug, // after seperator
-    S: ParseItem + std::fmt::Debug, // seperator
-    I: Iterator<Item = char>,       // chars
+    I: nom::InputTakeAtPosition,
+    <I as nom::InputTakeAtPosition>::Item: nom::AsChar + Clone,
+    F: nom::Parser<I, O, E>,
+    E: nom::error::ParseError<I>,
 {
-    let a = A::parse(input)?; // parse the first
-    let sep = S::parse(input)?; // parse the seperator
-    let b = B::parse(input)?; // parse the second
-
-    Ok((a, sep, b))
+    delimited(multispace0, f, multispace0)
 }
 
-pub(crate) fn parse_sep<A, S, B, I>(input: &mut TokenIter<I>) -> Result<(A, B)>
+pub(crate) fn ws_end0<I, O, F, E>(f: F) -> impl FnMut(I) -> nom::IResult<I, O, E>
 where
-    A: ParseItem + std::fmt::Debug, // before seperator
-    B: ParseItem + std::fmt::Debug, // after seperator
-    S: ParseItem + std::fmt::Debug, // seperator
-    I: Iterator<Item = char>,       // chars
+    I: nom::InputTakeAtPosition,
+    <I as nom::InputTakeAtPosition>::Item: nom::AsChar + Clone,
+    F: nom::Parser<I, O, E>,
+    E: nom::error::ParseError<I>,
 {
-    parse_with_sep::<A, S, B, I>(input).map(|(a, _, b)| (a, b))
+    terminated(f, multispace0)
 }
 
-pub(crate) fn parse_surround<O, C, F, R, I>(input: &mut TokenIter<I>, mut f: F) -> Result<Vec<R>>
+pub(crate) fn ws_start0<I, O, F, E>(f: F) -> impl FnMut(I) -> nom::IResult<I, O, E>
 where
-    F: FnMut(&mut TokenIter<I>) -> Result<R>,
-    O: ParseItem + std::fmt::Debug,
-    C: ParseItem + std::fmt::Debug,
-    I: Iterator<Item = char>,
+    I: nom::InputTakeAtPosition,
+    <I as nom::InputTakeAtPosition>::Item: nom::AsChar + Clone,
+    F: nom::Parser<I, O, E>,
+    E: nom::error::ParseError<I>,
 {
-    let _start = O::parse(input);
-    let mut next = match input.peek() {
-        Some(n) => n,
-        None => return f(input).map(|v| vec![v]),
-    };
+    preceded(multispace0, f)
+}
 
-    let mut items = Vec::new();
-    while <C as crate::Parse>::parse(&mut next.chars()).is_err() {
-        items.push(f(input)?);
-        next = match input.peek() {
-            Some(n) => n,
-            None => return Err(ErrorCode::unexpected_end("surround", input)),
-        }
+pub(crate) fn ws_end1<I, O, F, E>(f: F) -> impl FnMut(I) -> nom::IResult<I, O, E>
+where
+    I: nom::InputTakeAtPosition,
+    <I as nom::InputTakeAtPosition>::Item: nom::AsChar + Clone,
+    F: nom::Parser<I, O, E>,
+    E: nom::error::ParseError<I>,
+{
+    terminated(f, multispace1)
+}
+
+fn comma_eol_comment<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
+where
+    E: nom::error::ParseError<Span<'a>>,
+{
+    value((), pair(tag(";"), opt(is_not("\n\r"))))(input)
+}
+
+pub(crate) fn ending1<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
+where
+    E: nom::error::ParseError<Span<'a>>,
+{
+    value(
+        (),
+        preceded(
+            opt(ws_start0(comma_eol_comment)),
+            many1_count(line_ending),
+        ),
+    )(input)
+}
+
+pub(crate) fn many0_endings<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
+where
+    E: nom::error::ParseError<Span<'a>>,
+{
+    value((), many0_count(ending1))(input)
+}
+
+pub(crate) fn always_fails<I, O, F, E>(mut f: F) -> impl FnMut(I) -> nom::IResult<I, O, E>
+where
+    I: nom::InputTakeAtPosition,
+    <I as nom::InputTakeAtPosition>::Item: nom::AsChar + Clone,
+    F: nom::Parser<I, O, E>,
+    E: nom::error::ParseError<I>,
+{
+    move |input| {
+        f.parse(input).map_err(|e| match e {
+            nom::Err::Error(e) | nom::Err::Failure(e) => nom::Err::Failure(e),
+            _ => e,
+        })
     }
-    let _close = C::parse(input)?;
-
-    Ok(items)
 }
 
-pub(crate) enum Either<L, R> {
-    Left(L),
-    Right(R),
-}
-
-pub(crate) fn parse_either<A, B, I>(input: &mut TokenIter<I>) -> Result<Either<A, B>>
-where
-    A: ParseItem,
-    B: ParseItem + std::fmt::Debug,
-    I: Iterator<Item = char>,
-{
-    let mut peeked = match input.peek().map(str::chars) {
-        Some(s) => s,
-        None => return Err(ErrorCode::unexpected_end("either", input))
-    };
-    match <A as Parse>::parse(&mut peeked.clone()) {
-        Ok(a) => {
-            input.next(); // consume peeked
-            Ok(Either::Left(a))
-        },
-        Err(e1) => match <B as Parse>::parse(&mut peeked) {
-            Ok(b) => {
-                input.next(); // consume peeked
-                Ok(Either::Right(b))
-            },
-            Err(e2) => {
-                let msg = format!("expected either A or B but both failed, A: {}, B: {}", e1, e2);
-                Err(ErrorCode::ExpectedEither.into_err(msg, input))
-            }
+macro_rules! type_enum {
+    (@base $name:ident $(<$($lif:tt),+>)? {$($variant:ident $(<$($varlif:tt),+>)?),*}) => {
+        #[derive(Clone, Debug)]
+        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+        pub enum $name $(<$($lif),+>)? {
+            $($variant($variant $(<$($varlif),+>)? )),*
         }
-    }
+    };
+    ($name:ident $(<$($lif:tt),+>)? {
+        $($variant:ident $(<$($varlif:tt),+>)? $(($data:ty))?),*
+        $(,)?
+    }) => {
+        $(
+        #[derive(Clone, Debug)]
+        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+        pub struct $variant $(<$($varlif),+>)? $((pub $data))?;
+        )*
+
+        type_enum!(@base $name $(<$($lif),+>)? {$($variant $(<$($varlif),+>)?),*});
+    };
 }
+pub(crate) use type_enum;

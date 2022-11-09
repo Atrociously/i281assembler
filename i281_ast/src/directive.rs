@@ -1,6 +1,16 @@
-use i281_core::TokenIter;
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    combinator::{map, opt},
+    multi::many1,
+    sequence::{delimited, pair, preceded, terminated},
+};
 
-use crate::{type_enum, punct, Ident, Instruction, Label, OpCode, ParseItem, Result, Variable, ErrorCode};
+use crate::{
+    keyword, type_enum,
+    util::{always_fails, many0_endings, ws0},
+    IResult, Instruction, Label, ParseNom, Span, Variable,
+};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -11,7 +21,7 @@ pub struct Data {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Code {
-    pub labels: Vec<(Label, usize)>,
+    pub labels: Vec<Label>,
     pub instructions: Vec<Instruction>,
 }
 
@@ -56,85 +66,72 @@ impl Directive {
     }
 }
 
-impl ParseItem for Directive {
-    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let _dot = punct::Dot::parse(input)?;
-        let kind = Ident::parse(input)?;
+impl Data {
+    fn parse_inner(input: Span) -> IResult<Self> {
+        let (input, variables) = preceded(
+            delimited(
+                many0_endings,
+                preceded(tag("."), keyword::Data::parse),
+                always_fails(many0_endings),
+            ),
+            always_fails(many1(terminated(ws0(Variable::parse), many0_endings))),
+        )(input)?;
 
-        match kind.as_str() {
-            "data" => {
-                let mut variables = Vec::new();
-                let mut peeked = match input.peek() {
-                    Some(p) => p,
-                    None => return Ok(Self::Data(Data { variables })),
-                }
-                .chars();
-                while <punct::Dot as crate::Parse>::parse(&mut peeked).is_err() {
-                    // parse will consume input and affect the peeked value
-                    variables.push(Variable::parse(input)?);
-                    // update the peek value
-                    peeked = match input.peek() {
-                        Some(p) => p.chars(),
-                        None => return Ok(Self::Data(Data { variables })),
-                    };
-                }
-                Ok(Self::Data(Data{ variables }))
-            }
-            "code" => {
-                let mut index: usize = 0;
-                let mut labels = Vec::new();
-                let mut instructions = Vec::new();
+        Ok((input, Self { variables }))
+    }
+}
 
-                let mut peeked = match input.peek() {
-                    Some(p) => p,
-                    None => {
-                        return Ok(Self::Code(Code {
-                            labels,
-                            instructions,
-                        }))
-                    }
-                }
-                .chars();
-                while <punct::Dot as crate::Parse>::parse(&mut peeked.clone()).is_err() {
-                    // unwrap is ok because peek returned some
-                    if <OpCode as crate::Parse>::parse(&mut peeked).is_ok() {
-                        // opcode parsed from peeked value meaning this must be an instruction
-                        // without a label
-                        match Instruction::parse(input) {
-                            Ok(instruction) => {
-                                instructions.push(instruction);
-                                index += 1;
-                            }
-                            Err(e) => return Err(e),
-                        }
-                    } else {
-                        match Label::parse(input) {
-                            Ok(label) => {
-                                labels.push((label, index));
-                            }
-                            Err(e) => return Err(e),
-                        }
-                    }
+impl ParseNom for Data {
+    fn parse(input: crate::Span) -> crate::IResult<Self> {
+        let res = Self::parse_inner(input);
+        Variable::reset();
+        // this ensures that the variable memory offset will always be reset after
+        // parsing a data directive
+        res
+    }
+}
 
-                    // peek the next value
-                    peeked = match input.peek() {
-                        Some(p) => p.chars(),
-                        // if we have no more instructions then we are done
-                        None => {
-                            return Ok(Self::Code(Code {
-                                labels,
-                                instructions,
-                            }))
-                        }
-                    };
-                }
+impl ParseNom for Code {
+    fn parse(input: Span) -> IResult<Self> {
+        let (input, code) = preceded(
+            delimited(
+                many0_endings,
+                preceded(tag("."), keyword::Code::parse),
+                always_fails(many0_endings),
+            ),
+            always_fails(many1(pair(
+                opt(terminated(ws0(Label::parse), many0_endings)),
+                terminated(ws0(Instruction::parse), many0_endings),
+            ))),
+        )(input)?;
 
-                Ok(Self::Code(Code {
-                    labels,
-                    instructions,
-                }))
-            }
-            _ => Err(ErrorCode::DirectiveInvalid.expected_one_of(kind.as_str(), ["data", "code"], input)),
-        }
+        let (labels, instructions): (Vec<_>, Vec<_>) = code.into_iter().unzip();
+
+        let labels: Vec<_> = labels
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, label)| {
+                if let Some(mut label) = label {
+                    label.code_addr = i;
+                    Some(label)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        Ok((
+            input,
+            Self {
+                labels,
+                instructions,
+            },
+        ))
+    }
+}
+
+impl ParseNom for Directive {
+    fn parse(input: Span) -> IResult<Self> {
+        alt((map(Data::parse, Self::Data), map(Code::parse, Self::Code)))(input)
     }
 }

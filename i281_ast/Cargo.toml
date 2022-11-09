@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-color-eyre = "0.6"
-i281_core = { path = "../i281_core" }
-
+thiserror = "1"
+miette = "5"
+nom = "7"
+nom_locate = { version = "4", features = ["runtime-dispatch-simd"] }
 serde = { version = "1", features = ["derive"], optional = true }

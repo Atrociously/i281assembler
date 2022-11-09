@@ -7,15 +7,10 @@ macro_rules! keyword {
         });
 
         $(
-        impl $crate::ParseItem for $variant {
-            fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
-                let kw = input.next().ok_or($crate::ErrorCode::unexpected_end("keyword", input))?.to_uppercase();
-
-                if kw == $kw {
-                    Ok(Self)
-                } else {
-                    Err($crate::ErrorCode::KeywordInvalid.invalid_token(kw, $kw, input))
-                }
+        impl $crate::ParseNom for $variant {
+            fn parse(input: crate::Span) -> crate::IResult<Self> {
+                let (input, _) = nom::bytes::complete::tag_no_case($kw)(input)?;
+                Ok((input, Self))
             }
         }
         )+
@@ -24,19 +19,18 @@ macro_rules! keyword {
             pub const ALL: &'static [&'static str] = &[$($kw),+];
         }
 
-        impl $crate::ParseItem for Keyword {
-            fn parse<I: Iterator<Item = char>>(input: &mut ::i281_core::TokenIter<I>) -> $crate::Result<Self> {
-                let kw = input.next().ok_or($crate::ErrorCode::unexpected_end("keyword", input))?.to_uppercase();
-
-                match kw.as_str() {
-                    $($kw => Ok(Self::$variant($variant)),)+
-                    _ => Err($crate::ErrorCode::KeywordInvalid.expected_one_of(kw, Self::ALL, input))
-                }
+        impl $crate::ParseNom for Keyword {
+            fn parse(input: crate::Span) -> crate::IResult<Self> {
+                nom::branch::alt((
+                    $(nom::combinator::map($variant::parse, Self::$variant)),+
+                ))(input)
             }
         }
     }
 }
 
 keyword! {
-    Byte == "BYTE",
+    Byte == "byte",
+    Code == "code",
+    Data == "data",
 }

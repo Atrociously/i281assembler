@@ -1,6 +1,6 @@
-use i281_core::TokenIter;
+use nom::{branch::permutation, combinator::opt};
 
-use crate::{Directive, ParseItem, Result, directive, ErrorCode};
+use crate::{directive, sealed::ParseNom, ParseError, Span};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -10,32 +10,21 @@ pub struct Root {
 }
 
 impl Root {
-    pub fn parse<I: Iterator<Item = char>>(input: &mut I) -> Result<Self> {
-        <Self as crate::Parse>::parse(input)
+    pub fn parse<'a>(input: &'a str) -> Result<Self, ParseError<'a>> {
+        <Self as ParseNom>::parse(Span::new(input))
+            .map(|(_, out)| out)
+            .map_err(|err| match err {
+                nom::Err::Failure(e)
+                | nom::Err::Error(e) => e,
+                nom::Err::Incomplete(_) => unreachable!() // we use complete in all parsers
+            })
     }
 }
 
-impl ParseItem for Root {
-    fn parse<I: Iterator<Item = char>>(input: &mut TokenIter<I>) -> Result<Self> {
-        let mut data: Option<directive::Data> = None;
-        let mut code: Option<directive::Code> = None;
-
-        while let Some(_) = input.peek() {
-            let directive = Directive::parse(input)?;
-            match directive {
-                Directive::Data(d) => match data {
-                    Some(_) => return Err(ErrorCode::RootInvalid.into_err("multiple data directives defined", input)),
-                    None => data = Some(d),
-                },
-                Directive::Code(c) => match code {
-                    Some(_) => return Err(ErrorCode::RootInvalid.into_err("multiple code directives defined", input)),
-                    None => code = Some(c),
-                }
-            }
-        }
-        Ok(Self {
-            data,
-            code: code.ok_or(ErrorCode::RootInvalid.into_err("no code directive defined", input))?,
-        })
+impl ParseNom for Root {
+    fn parse(input: crate::Span) -> crate::IResult<Self> {
+        let (input, (data, code)) =
+            permutation((opt(directive::Data::parse), directive::Code::parse))(input)?;
+        Ok((input, Self { data, code }))
     }
 }
