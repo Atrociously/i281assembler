@@ -1,6 +1,6 @@
 use nom::bytes::complete::tag;
 
-use crate::sealed::ParseNom;
+use crate::ParseNom;
 
 use super::Ident;
 

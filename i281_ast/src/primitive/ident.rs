@@ -35,3 +35,9 @@ impl ParseNom for Ident {
         Ok((input, Self(ident.to_string())))
     }
 }
+
+impl std::fmt::Display for Ident {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}

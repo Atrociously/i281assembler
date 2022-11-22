@@ -1,6 +1,6 @@
 use nom::{branch::alt, combinator::map};
 
-use crate::{sealed::ParseNom, type_enum};
+use crate::{type_enum, ParseNom};
 
 macro_rules! opcode {
     ($($variant:ident == $val:literal),+ $(,)?) => {
@@ -60,21 +60,21 @@ impl ParseNom for OpCode {
     fn parse(input: crate::Span) -> crate::IResult<Self> {
         alt((
             map(NoOp::parse, Self::NoOp),
-            map(InputC::parse, Self::InputC),
             map(InputCF::parse, Self::InputCF),
-            map(InputD::parse, Self::InputD),
+            map(InputC::parse, Self::InputC),
             map(InputDF::parse, Self::InputDF),
+            map(InputD::parse, Self::InputD),
             map(Move::parse, Self::Move),
             map(LoadI::parse, Self::LoadI),
             map(LoadP::parse, Self::LoadP),
-            map(Add::parse, Self::Add),
             map(AddI::parse, Self::AddI),
-            map(Sub::parse, Self::Sub),
+            map(Add::parse, Self::Add),
             map(SubI::parse, Self::SubI),
-            map(Load::parse, Self::Load),
+            map(Sub::parse, Self::Sub),
             map(LoadF::parse, Self::LoadF),
-            map(Store::parse, Self::Store),
+            map(Load::parse, Self::Load),
             map(StoreF::parse, Self::StoreF),
+            map(Store::parse, Self::Store),
             map(ShiftL::parse, Self::ShiftL),
             map(ShiftR::parse, Self::ShiftR),
             map(Cmp::parse, Self::Cmp),
@@ -84,8 +84,8 @@ impl ParseNom for OpCode {
                 map(BrZ::parse, Self::BrZ),
                 map(BrNE::parse, Self::BrNE),
                 map(BrNZ::parse, Self::BrNZ),
-                map(BrG::parse, Self::BrG),
                 map(BrGE::parse, Self::BrGE),
+                map(BrG::parse, Self::BrG),
             )),
         ))(input)
     }

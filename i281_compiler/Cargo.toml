@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-utf8-chars = "2"
+rayon = "1.5"
+thiserror.workspace = true
+miette.workspace = true
 
 i281_ast = { path = "../i281_ast" }
+i281_ir = { path = "../i281_ir" }

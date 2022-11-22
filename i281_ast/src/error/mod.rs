@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::Span;
 
-#[derive(Error, Debug, Diagnostic)]
+#[derive(Clone, Error, Debug, Diagnostic)]
 #[error("Failure to parse input")]
 pub struct ParseError<'a> {
     #[source_code]

@@ -1,5 +1,5 @@
-use crate::util::{ws0, ws_end1};
-use crate::{sealed::ParseNom, Span};
+use crate::util::{always_fails, ws0, ws_end1};
+use crate::{ParseNom, Span};
 
 use nom::{bytes::complete::tag, sequence::separated_pair};
 
@@ -149,6 +149,6 @@ impl Instruction {
 impl ParseNom for Instruction {
     fn parse(input: Span) -> IResult<Self> {
         let (input, opcode) = ws_end1(OpCode::parse)(input)?;
-        Self::parse_after_opcode(opcode, input)
+        always_fails(move |input| Self::parse_after_opcode(opcode.clone(), input))(input)
     }
 }

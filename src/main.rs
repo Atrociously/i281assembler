@@ -1,21 +1,28 @@
+#![forbid(unsafe_code)]
+
+use std::{path::PathBuf, ffi::OsString};
+
 use clap::Parser;
 
-use i281_compiler::{writers::VerilogWriter, Compiler};
+use i281_ast::Root;
 use miette::IntoDiagnostic;
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug, Default)]
-enum OutputKind {
-    JsonAst,
-    DebugInfo,
+enum EmitKind {
+    Ast,
+    AsmIr,
     #[default]
     Verilog,
 }
 
 #[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
 struct Args {
     #[arg(long, value_enum, default_value_t)]
-    output_kind: OutputKind,
-    filename: String,
+    emit: EmitKind,
+    #[arg(long, short, default_value_os_t = PathBuf::from("./target/"))]
+    out_dir: PathBuf,
+    filename: OsString,
 }
 
 fn main() -> miette::Result<()> {
@@ -24,24 +31,22 @@ fn main() -> miette::Result<()> {
     let input = std::fs::read_to_string(args.filename).into_diagnostic()?;
     let input = input.as_str();
 
-    let compiler = Compiler::new().parse(input)?;
-
-    match args.output_kind {
-        OutputKind::JsonAst => {
-            println!(
-                "{}",
-                serde_json::to_string(&compiler.ast()).into_diagnostic()?
-            );
+    let ast = Root::parse(input)?;
+    match args.emit {
+        EmitKind::Ast => {
+            let output = std::io::stdout().lock();
+            serde_json::to_writer(output, &ast).into_diagnostic()?;
         }
-        OutputKind::DebugInfo => {
-            dbg!(compiler.ast());
+        EmitKind::AsmIr => {
+            let output = std::io::stdout().lock();
+            let mut err = std::io::stderr().lock();
+            let ir = i281_compiler::analyze(&mut err, ast)?;
+            serde_json::to_writer(output, &ir).into_diagnostic()?;
         }
-        OutputKind::Verilog => {
-            compiler
-                .analyze()
-                .unwrap()
-                .write::<_, VerilogWriter>("")
-                .unwrap();
+        EmitKind::Verilog => {
+            let mut output = std::io::stderr().lock();
+            let ir = i281_compiler::analyze(&mut output, ast)?;
+            i281_compiler::compile_verilog("./test_output/", ir).into_diagnostic()?;
         }
     }
 
@@ -54,7 +59,7 @@ mod tests {
     use std::env;
     use walkdir::WalkDir;
 
-    use i281_ast::{Root, ParseError};
+    use i281_ast::{ParseError, Root};
 
     #[test]
     fn test_examples() -> miette::Result<()> {

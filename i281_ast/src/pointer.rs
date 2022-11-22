@@ -4,7 +4,7 @@ use nom::{
     sequence::{delimited, separated_pair},
 };
 
-use crate::{literal, sealed::ParseNom, Ident};
+use crate::{literal, Ident, ParseNom};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]

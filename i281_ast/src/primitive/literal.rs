@@ -7,7 +7,7 @@ use nom::{
     sequence::{pair, preceded},
 };
 
-use crate::{sealed::ParseNom, type_enum, util::ws0, IResult, ParseError, Span};
+use crate::{type_enum, util::ws0, IResult, ParseError, ParseNom, Span};
 
 type_enum!(Literal {
     Byte(i8),

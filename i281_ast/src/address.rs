@@ -17,6 +17,12 @@ pub struct Address {
     pub to: AddressExpr,
 }
 
+impl AsRef<Address> for Address {
+    fn as_ref(&self) -> &Address {
+        self
+    }
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum AddressItem {
@@ -79,6 +85,7 @@ impl AddressExpr {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct AddrIter<'a> {
     current: Option<&'a AddressExpr>,
 }
@@ -103,11 +110,8 @@ impl<'a> Iterator for AddrIter<'a> {
 
 impl ParseNom for Address {
     fn parse(input: crate::Span) -> crate::IResult<Self> {
-        let (input, to) = delimited(
-            ws_end0(tag("[")),
-            AddressExpr::parse,
-            ws_start0(tag("]")),
-        )(input)?;
+        let (input, to) =
+            delimited(ws_end0(tag("[")), AddressExpr::parse, ws_start0(tag("]")))(input)?;
         Ok((input, Self { to }))
     }
 }

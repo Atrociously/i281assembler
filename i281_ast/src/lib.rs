@@ -1,3 +1,6 @@
+#![forbid(unsafe_code)]
+#![deny(missing_debug_implementations)]
+
 mod primitive;
 
 mod address;
@@ -13,12 +16,12 @@ mod util;
 
 pub(crate) use util::type_enum;
 
-pub use primitive::{keyword, literal, opcode, Ident, Literal, OpCode, Oper, Register};
 pub use address::{Address, AddressExpr, AddressItem};
 pub use directive::Directive;
 pub use instruction::Instruction;
 pub use label::Label;
 pub use pointer::Pointer;
+pub use primitive::{keyword, literal, opcode, Ident, Literal, OpCode, Oper, Register};
 pub use root::Root;
 pub use variable::Variable;
 
@@ -27,12 +30,9 @@ pub type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 pub type IResult<'a, O> = nom::IResult<Span<'a>, O, ParseError<'a>>;
 
 // this is an implementation trait used internally
-mod sealed {
-    pub trait ParseNom: Sized {
-        fn parse(input: super::Span) -> super::IResult<Self>;
-    }
+pub(crate) trait ParseNom: Sized {
+    fn parse(input: Span) -> IResult<Self>;
 }
-pub(crate) use sealed::ParseNom;
 
 // this is a public facing trait that is automatically implemented for all ParseNom implementors
 pub trait Parse {

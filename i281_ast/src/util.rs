@@ -61,10 +61,7 @@ where
 {
     value(
         (),
-        preceded(
-            opt(ws_start0(comma_eol_comment)),
-            many1_count(line_ending),
-        ),
+        preceded(opt(ws_start0(comma_eol_comment)), many1_count(line_ending)),
     )(input)
 }
 

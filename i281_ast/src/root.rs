@@ -1,6 +1,6 @@
 use nom::{branch::permutation, combinator::opt};
 
-use crate::{directive, sealed::ParseNom, ParseError, Span};
+use crate::{directive, ParseError, ParseNom, Span};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -10,14 +10,14 @@ pub struct Root {
 }
 
 impl Root {
-    pub fn parse<'a>(input: &'a str) -> Result<Self, ParseError<'a>> {
+    pub fn parse(input: &str) -> Result<Self, ParseError<'static>> {
         <Self as ParseNom>::parse(Span::new(input))
             .map(|(_, out)| out)
             .map_err(|err| match err {
-                nom::Err::Failure(e)
-                | nom::Err::Error(e) => e,
-                nom::Err::Incomplete(_) => unreachable!() // we use complete in all parsers
+                nom::Err::Failure(e) | nom::Err::Error(e) => e,
+                nom::Err::Incomplete(_) => unreachable!(), // we use complete in all parsers
             })
+            .map_err(ParseError::into_static)
     }
 }
 

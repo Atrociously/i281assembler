@@ -1,11 +1,16 @@
 [package]
-name = "i281_ast"
+name = "i281_ir"
 version = "0.1.0"
 edition = "2021"
+
+[features]
+default = []
+parallel = ["rayon"]
 
 [dependencies]
 thiserror.workspace = true
 miette.workspace = true
-nom = "7"
-nom_locate = { version = "4", features = ["runtime-dispatch-simd"] }
+i281_ast = { path = "../i281_ast" }
+
+rayon = { version = "1.5", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }

@@ -2,21 +2,36 @@
 name = "i281assembler"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "Jack Morrison <jackmorr@iastate.edu>"
+]
+description = "A compiler for the i281 cpu developed and used at Iowa State University"
+
+
+[[bin]]
+name = "compile281"
+path = "src/main.rs"
 
 [workspace]
 members = [
     "i281_ast",
+    "i281_ir",
     "i281_compiler",
 ]
 
 [dependencies]
 i281_ast = { path = "./i281_ast", features = ["serde"] }
+i281_ir = { path = "./i281_ir", features = ["serde"] }
 i281_compiler = { path = "./i281_compiler" }
-miette = { version = "5", features = ["fancy"] }
+miette = { workspace = true, features = ["fancy"] }
 
 
 clap = { version = "4", features = ["derive"] }
 serde_json = "1"
+
+[workspace.dependencies]
+thiserror = "1"
+miette = "5"
 
 [dev-dependencies]
 walkdir = "2"
