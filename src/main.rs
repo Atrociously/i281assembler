@@ -46,7 +46,7 @@ fn main() -> miette::Result<()> {
         EmitKind::Verilog => {
             let mut output = std::io::stderr().lock();
             let ir = i281_compiler::analyze(&mut output, ast)?;
-            i281_compiler::compile_verilog("./test_output/", ir).into_diagnostic()?;
+            i281_compiler::compile_verilog(args.out_dir, ir).into_diagnostic()?;
         }
     }
 
