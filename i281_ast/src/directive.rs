@@ -18,12 +18,39 @@ pub struct Data {
     pub variables: Vec<Variable>,
 }
 
+impl PartialEq for Data {
+    fn eq(&self, other: &Self) -> bool {
+        self.variables
+            .iter()
+            .zip(other.variables.iter())
+            .all(|(a, b)| a == b)
+    }
+}
+impl Eq for Data {}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Code {
     pub labels: Vec<Label>,
     pub instructions: Vec<Instruction>,
 }
+
+impl PartialEq for Code {
+    fn eq(&self, other: &Self) -> bool {
+        let labels = self
+            .labels
+            .iter()
+            .zip(other.labels.iter())
+            .all(|(a, b)| a == b);
+        let instructions = self
+            .instructions
+            .iter()
+            .zip(other.instructions.iter())
+            .all(|(a, b)| a == b);
+        labels && instructions
+    }
+}
+impl Eq for Code {}
 
 // the main organizational block of assembly code
 // there are two kinds of directives data and code
@@ -66,9 +93,9 @@ impl Directive {
     }
 }
 
-impl Data {
-    fn parse_inner(input: Span) -> IResult<Self> {
-        let (input, variables) = preceded(
+impl ParseNom for Data {
+    fn parse(input: crate::Span) -> crate::IResult<Self> {
+        let (input, mut variables) = preceded(
             delimited(
                 many0_endings,
                 preceded(tag("."), keyword::Data::parse),
@@ -77,17 +104,12 @@ impl Data {
             always_fails(many1(terminated(ws0(Variable::parse), many0_endings))),
         )(input)?;
 
+        let mut data_addr: usize = 0;
+        for var in variables.iter_mut() {
+            var.data_addr = data_addr;
+            data_addr += var.value.size_of();
+        }
         Ok((input, Self { variables }))
-    }
-}
-
-impl ParseNom for Data {
-    fn parse(input: crate::Span) -> crate::IResult<Self> {
-        let res = Self::parse_inner(input);
-        Variable::reset();
-        // this ensures that the variable memory offset will always be reset after
-        // parsing a data directive
-        res
     }
 }
 
@@ -135,3 +157,5 @@ impl ParseNom for Directive {
         alt((map(Data::parse, Self::Data), map(Code::parse, Self::Code)))(input)
     }
 }
+
+// TODO implement comprehensive tests for both directives

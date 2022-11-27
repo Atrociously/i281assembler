@@ -6,6 +6,7 @@ authors = [
     "Jack Morrison <jackmorr@iastate.edu>"
 ]
 description = "A compiler for the i281 cpu developed and used at Iowa State University"
+license = "MIT OR Apache-2.0"
 
 
 [[bin]]

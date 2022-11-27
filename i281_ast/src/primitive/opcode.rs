@@ -15,10 +15,40 @@ macro_rules! opcode {
                     .map(|(input, _)| (input, Self))
             }
         }
+
+        impl std::fmt::Display for $variant {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, $val)
+            }
+        }
         )+
 
         impl OpCode {
             pub const ALL: &'static [&'static str] = &[$($val),+];
+        }
+
+        impl std::fmt::Display for OpCode {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(Self::$variant(v) => v.fmt(f),)*
+                }
+            }
+        }
+
+        // auto-generate tests
+        #[cfg(test)]
+        mod test {
+            use paste::paste;
+            use crate::Parse;
+            use super::OpCode;
+
+            $(paste! {
+            #[allow(non_snake_case)]
+            #[test]
+            fn [<test_ $variant>]() {
+                assert_eq!(OpCode::parse($val).unwrap().1, OpCode::$variant(super::$variant));
+            }
+            })*
         }
     }
 }

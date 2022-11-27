@@ -1,11 +1,11 @@
 use crate::util::{always_fails, ws0, ws_end1};
-use crate::{ParseNom, Span};
+use crate::{opcode, ParseNom, Span};
 
 use nom::{bytes::complete::tag, sequence::separated_pair};
 
 use crate::{literal, Address, IResult, Ident, OpCode, Pointer, Register};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Instruction {
     NoOp,
@@ -152,3 +152,36 @@ impl ParseNom for Instruction {
         always_fails(move |input| Self::parse_after_opcode(opcode.clone(), input))(input)
     }
 }
+
+impl std::fmt::Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoOp => write!(f, "{}", opcode::NoOp),
+            Instruction::InputC(addr) => write!(f, "{} {addr}", opcode::InputC),
+            Instruction::InputCF(addr) => write!(f, "{} {addr}", opcode::InputCF),
+            Instruction::InputD(addr) => write!(f, "{} {addr}", opcode::InputD),
+            Instruction::InputDF(addr) => write!(f, "{} {addr}", opcode::InputDF),
+            Instruction::Move(rx, ry) => write!(f, "{} {rx}, {ry}", opcode::Move),
+            Instruction::LoadI(rx, val) => write!(f, "{} {rx}, {val}", opcode::LoadI),
+            Instruction::LoadP(rx, pointer) => write!(f, "{} {rx}, {pointer}", opcode::LoadP),
+            Instruction::Add(rx, ry) => write!(f, "{} {rx}, {ry}", opcode::Add),
+            Instruction::AddI(rx, val) => write!(f, "{} {rx}, {val}", opcode::AddI),
+            Instruction::Sub(rx, ry) => write!(f, "{} {rx}, {ry}", opcode::Sub),
+            Instruction::SubI(rx, val) => write!(f, "{} {rx}, {val}", opcode::SubI),
+            Instruction::Load(rx, addr) => write!(f, "{} {rx}, {addr}", opcode::Load),
+            Instruction::LoadF(rx, addr) => write!(f, "{} {rx}, {addr}", opcode::LoadF),
+            Instruction::Store(addr, rx) => write!(f, "{} {addr}, {rx}", opcode::Store),
+            Instruction::StoreF(addr, rx) => write!(f, "{} {addr}, {rx}", opcode::StoreF),
+            Instruction::ShiftL(rx) => write!(f, "{} {rx}", opcode::ShiftL),
+            Instruction::ShiftR(rx) => write!(f, "{} {rx}", opcode::ShiftR),
+            Instruction::Cmp(rx, ry) => write!(f, "{} {rx}, {ry}", opcode::Cmp),
+            Instruction::Jump(label) => write!(f, "{} {label}", opcode::Jump),
+            Instruction::BrE(label) => write!(f, "{} {label}", opcode::BrE),
+            Instruction::BrNE(label) => write!(f, "{} {label}", opcode::BrNE),
+            Instruction::BrG(label) => write!(f, "{} {label}", opcode::BrG),
+            Instruction::BrGE(label) => write!(f, "{} {label}", opcode::BrGE),
+        }
+    }
+}
+
+// TODO implement tests for all instructions

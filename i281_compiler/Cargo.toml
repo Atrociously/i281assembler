@@ -2,9 +2,12 @@
 name = "i281_compiler"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "Jack Morrison <jackmorr@iastate.edu>"
+]
+license = "MIT OR Apache-2.0"
 
 [dependencies]
-rayon = "1.5"
 thiserror.workspace = true
 miette.workspace = true
 

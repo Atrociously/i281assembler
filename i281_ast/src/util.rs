@@ -89,18 +89,26 @@ where
 
 macro_rules! type_enum {
     (@base $name:ident $(<$($lif:tt),+>)? {$($variant:ident $(<$($varlif:tt),+>)?),*}) => {
-        #[derive(Clone, Debug)]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
         pub enum $name $(<$($lif),+>)? {
             $($variant($variant $(<$($varlif),+>)? )),*
         }
+
+        $(
+        impl From<$variant> for $name {
+            fn from(v: $variant) -> Self {
+                Self::$variant(v)
+            }
+        }
+        )*
     };
     ($name:ident $(<$($lif:tt),+>)? {
         $($variant:ident $(<$($varlif:tt),+>)? $(($data:ty))?),*
         $(,)?
     }) => {
         $(
-        #[derive(Clone, Debug)]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
         pub struct $variant $(<$($varlif),+>)? $((pub $data))?;
         )*

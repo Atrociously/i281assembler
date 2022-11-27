@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use i281_ast::{
     literal::Byte, Address, AddressItem, Ident, Instruction, Label, Oper, Register, Root, Variable,
 };
-use i281_ir::{BranchCondition, Instruction::*, ShiftDirection, Ir};
+use i281_ir::{BranchCondition, Instruction::*, Ir, ShiftDirection};
 
 use crate::{
     diagnostics::{Diagnostic, Error, Failure, Result, Warning},
@@ -32,12 +32,7 @@ impl Analyzer {
         }
     }
 
-    pub fn validate(
-        mut self,
-    ) -> Result<(
-        Ir,
-        Vec<Diagnostic>,
-    )> {
+    pub fn validate(mut self) -> Result<(Ir, Vec<Diagnostic>)> {
         self.validate_labels()?;
         let variables = self.validate_variables()?;
 
@@ -60,7 +55,13 @@ impl Analyzer {
             }
         }
 
-        Ok((Ir { variables, instructions }, self.diagnostics))
+        Ok((
+            Ir {
+                variables,
+                instructions,
+            },
+            self.diagnostics,
+        ))
     }
 
     fn get_label_offset(
@@ -114,20 +115,30 @@ impl Analyzer {
             return Err(Failure::Skip);
         }
 
-        let mut get_item_value = |item: &AddressItem| match item {
-            AddressItem::Var(v) => self.get_var_address(v, ins),
-            AddressItem::Lit(b) => Ok(b.0),
-            AddressItem::Reg(_) => unreachable!(),
-        };
-
         let address = address
             .to
             .iter()
             .try_fold((0i8, None), |(mut addr, oper), (item, next_oper)| {
-                let value = get_item_value(item)?;
+                let value = match item {
+                    AddressItem::Var(v) => self.get_var_address(v, ins)?,
+                    AddressItem::Lit(b) => b.0,
+                    AddressItem::Reg(_) => unreachable!(),
+                };
                 match oper {
-                    Some(Oper::Add) => addr += value,
-                    Some(Oper::Sub) => addr -= value,
+                    Some(Oper::Add) => match addr.checked_add(value) {
+                        Some(v) => addr = v,
+                        None => {
+                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            return Err(Failure::Skip);
+                        }
+                    }
+                    Some(Oper::Sub) => match addr.checked_sub(value) {
+                        Some(v) => addr = v,
+                        None => {
+                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            return Err(Failure::Skip);
+                        }
+                    }
                     _ => addr = value,
                 }
                 Result::Ok((addr, next_oper.copied()))
@@ -154,12 +165,6 @@ impl Analyzer {
             return Err(Failure::Skip);
         }
 
-        let mut get_item_value = |item: &AddressItem| match item {
-            AddressItem::Var(v) => self.get_var_address(v, ins),
-            AddressItem::Lit(b) => Ok(b.0),
-            AddressItem::Reg(_) => Ok(0), // return zero to have no effect
-        };
-
         // if there is more than one register specified in the address we have a problem
         if address
             .to
@@ -185,10 +190,26 @@ impl Analyzer {
             .to
             .iter()
             .try_fold((0i8, None), |(mut addr, oper), (item, next_oper)| {
-                let value = get_item_value(item)?;
+                let value = match item {
+                    AddressItem::Var(v) => self.get_var_address(v, ins)?,
+                    AddressItem::Lit(b) => b.0,
+                    AddressItem::Reg(_) => 0,
+                };
                 match oper {
-                    Some(Oper::Add) => addr += value,
-                    Some(Oper::Sub) => addr -= value,
+                    Some(Oper::Add) => match addr.checked_add(value) {
+                        Some(v) => addr = v,
+                        None => {
+                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            return Err(Failure::Skip);
+                        }
+                    }
+                    Some(Oper::Sub) => match addr.checked_sub(value) {
+                        Some(v) => addr = v,
+                        None => {
+                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            return Err(Failure::Skip);
+                        }
+                    }
                     _ => addr = value,
                 }
                 Result::Ok((addr, next_oper.copied()))

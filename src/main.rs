@@ -1,10 +1,11 @@
 #![forbid(unsafe_code)]
 
-use std::{path::PathBuf, ffi::OsString};
+use std::{ffi::OsString, fs::OpenOptions, path::PathBuf};
 
 use clap::Parser;
 
 use i281_ast::Root;
+use i281_compiler::VerilogOutput;
 use miette::IntoDiagnostic;
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug, Default)]
@@ -20,7 +21,7 @@ enum EmitKind {
 struct Args {
     #[arg(long, value_enum, default_value_t)]
     emit: EmitKind,
-    #[arg(long, short, default_value_os_t = PathBuf::from("./target/"))]
+    #[arg(long, short, default_value_os_t = PathBuf::from("./i281build/"))]
     out_dir: PathBuf,
     filename: OsString,
 }
@@ -46,7 +47,31 @@ fn main() -> miette::Result<()> {
         EmitKind::Verilog => {
             let mut output = std::io::stderr().lock();
             let ir = i281_compiler::analyze(&mut output, ast)?;
-            i281_compiler::compile_verilog(args.out_dir, ir).into_diagnostic()?;
+
+            if !args.out_dir.exists() {
+                std::fs::create_dir_all(&args.out_dir).into_diagnostic()?;
+            }
+
+            let opts = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .append(false)
+                .to_owned();
+
+            let code_low = &mut opts
+                .open(args.out_dir.join("User_Code_Low.v"))
+                .into_diagnostic()?;
+            let code_low = VerilogOutput::new("User_Code_Low", code_low);
+            let code_high = &mut opts
+                .open(args.out_dir.join("User_Code_High.v"))
+                .into_diagnostic()?;
+            let code_high = VerilogOutput::new("User_Code_High", code_high);
+            let data = &mut opts
+                .open(args.out_dir.join("User_Data.v"))
+                .into_diagnostic()?;
+            let data = VerilogOutput::new("User_Data", data);
+
+            i281_compiler::compile_verilog((code_low, code_high, data), ir).into_diagnostic()?;
         }
     }
 

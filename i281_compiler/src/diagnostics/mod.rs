@@ -8,9 +8,9 @@ pub use warning::Warning;
 
 #[derive(Clone, Debug, miette::Diagnostic, thiserror::Error)]
 pub enum Diagnostic {
-    #[error("ERROR: {0}")]
+    #[error("ERROR occurred while analyzing the assembly")]
     Error(#[from] Error),
-    #[error("WARNING: {0}")]
+    #[error("WARNING something *could* be wrong with the assembly")]
     Warning(#[from] Warning),
 }
 

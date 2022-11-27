@@ -1,0 +1,18 @@
+# This is the config for cargo-deny to lint dependency requirements
+
+[advisories]
+vulnerability = "deny"
+unmaintained = "deny"
+notice = "warn"
+yanked = "warn"
+unsound = "warn"
+severity-threshold = "medium"
+ 
+[licenses]
+unlicensed = "warn"
+allow-osi-fsf-free = "both"
+copyleft = "deny"
+default = "deny"
+allow = [
+    "Unicode-DFS-2016"
+]

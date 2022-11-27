@@ -2,15 +2,14 @@
 name = "i281_ir"
 version = "0.1.0"
 edition = "2021"
-
-[features]
-default = []
-parallel = ["rayon"]
+authors = [
+    "Jack Morrison <jackmorr@iastate.edu>"
+]
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 thiserror.workspace = true
 miette.workspace = true
 i281_ast = { path = "../i281_ast" }
 
-rayon = { version = "1.5", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }

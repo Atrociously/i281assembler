@@ -10,6 +10,8 @@ pub enum Failure {
     NonUniqueVariable(Variable),
     #[error("label with name `{}` is defined more than once", .0.ident)]
     NonUniqueLabel(Label),
+    #[error("Encountered an error in the compilation process see diagnostic info")]
+    EncounteredError,
     #[error("")]
     Skip, // signal variant
 }

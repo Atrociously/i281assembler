@@ -15,8 +15,24 @@ use crate::ParseNom;
 pub struct Ident(String);
 
 impl Ident {
+    pub fn new(s: String) -> Self {
+        Self(s)
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+}
+
+impl From<String> for Ident {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl<'a> From<&'a str> for Ident {
+    fn from(s: &'a str) -> Self {
+        Self(s.to_owned())
     }
 }
 
@@ -39,5 +55,33 @@ impl ParseNom for Ident {
 impl std::fmt::Display for Ident {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Ident;
+    use crate::Parse;
+
+    #[test]
+    fn ident1() {
+        Ident::parse("a1").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn ident2() {
+        Ident::parse("1a").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn ident3() {
+        Ident::parse("  ab").unwrap();
+    }
+
+    #[test]
+    fn ident4() {
+        Ident::parse("ab   ").unwrap();
     }
 }

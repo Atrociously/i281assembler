@@ -31,6 +31,9 @@ pub type IResult<'a, O> = nom::IResult<Span<'a>, O, ParseError<'a>>;
 
 // this is an implementation trait used internally
 pub(crate) trait ParseNom: Sized {
+    // implementing this should generally follow these guidelines:
+    //  - do not consume whitespace at the start or end unless it is meaningful
+    //  - only consume exactly what is required for parsing nothing less nothing more
     fn parse(input: Span) -> IResult<Self>;
 }
 

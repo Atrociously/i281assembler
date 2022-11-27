@@ -2,6 +2,10 @@
 name = "i281_ast"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "Jack Morrison <jackmorr@iastate.edu>"
+]
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 thiserror.workspace = true
@@ -9,3 +13,6 @@ miette.workspace = true
 nom = "7"
 nom_locate = { version = "4", features = ["runtime-dispatch-simd"] }
 serde = { version = "1", features = ["derive"], optional = true }
+
+[dev-dependencies]
+paste = "1" # this dependency is used in tests only so we only need it in dev

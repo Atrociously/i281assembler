@@ -4,7 +4,7 @@ use nom::{
     character::complete::{digit1, hex_digit1, one_of},
     combinator::{map, opt, recognize},
     multi::{many1, separated_list1},
-    sequence::{pair, preceded},
+    sequence::{pair, preceded, separated_pair},
 };
 
 use crate::{type_enum, util::ws0, IResult, ParseError, ParseNom, Span};
@@ -65,13 +65,21 @@ impl ParseNom for Byte {
 
 impl ParseNom for Array {
     fn parse(input: Span) -> IResult<Self> {
-        let (input, vals) = separated_list1(
-            ws0(tag(",")),
+        let (input, (first, mut vals)) = separated_pair(
             alt((
-                map(<Byte as ParseNom>::parse, Literal::Byte),
-                map(<NotSet as ParseNom>::parse, Literal::NotSet),
+                map(Byte::parse, Literal::Byte),
+                map(NotSet::parse, Literal::NotSet),
             )),
+            ws0(tag(",")),
+            separated_list1(
+                ws0(tag(",")),
+                alt((
+                    map(Byte::parse, Literal::Byte),
+                    map(NotSet::parse, Literal::NotSet),
+                )),
+            ),
         )(input)?;
+        vals.insert(0, first);
         Ok((input, Self(vals)))
     }
 }
@@ -89,5 +97,81 @@ impl ParseNom for Literal {
             map(Byte::parse, Literal::Byte),
             map(NotSet::parse, Literal::NotSet),
         ))(input)
+    }
+}
+
+impl std::fmt::Display for Byte {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::fmt::Display for Array {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO: remember to change this to intersperse when that becomes stable
+        let v = self
+            .0
+            .iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        write!(f, "{}", v)
+    }
+}
+
+impl std::fmt::Display for NotSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "?")
+    }
+}
+
+impl std::fmt::Display for Literal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Byte(b) => b.fmt(f),
+            Self::Array(a) => a.fmt(f),
+            Self::NotSet(n) => n.fmt(f),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::{Array, Byte, Literal, NotSet};
+    use crate::Parse;
+
+    #[test]
+    fn literal1() {
+        assert_eq!(Literal::parse("98").unwrap().1, Literal::Byte(Byte(98)));
+    }
+
+    #[test]
+    #[should_panic]
+    fn literal2() {
+        Literal::parse("192837453").unwrap();
+    }
+
+    #[test]
+    fn literal3() {
+        let expected = Literal::Array(Array(vec![
+            Literal::Byte(Byte(78)),
+            Literal::Byte(Byte(20)),
+        ]));
+        assert_eq!(Literal::parse("78,20").unwrap().1, expected);
+        assert_eq!(Literal::parse("78 , 20").unwrap().1, expected);
+    }
+
+    #[test]
+    fn literal4() {
+        assert_eq!(Literal::parse("?").unwrap().1, Literal::NotSet(NotSet));
+    }
+
+    #[test]
+    fn literal5() {
+        let expected = Literal::Array(Array(vec![
+            Literal::Byte(Byte(20)),
+            Literal::NotSet(NotSet),
+        ]));
+        assert_eq!(Literal::parse("20,?").unwrap().1, expected);
     }
 }

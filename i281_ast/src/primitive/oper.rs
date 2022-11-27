@@ -14,3 +14,28 @@ impl ParseNom for Oper {
         alt((map(tag("+"), |_| Self::Add), map(tag("-"), |_| Self::Sub)))(input)
     }
 }
+
+impl std::fmt::Display for Oper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Oper::Add => write!(f, "+"),
+            Oper::Sub => write!(f, "-"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Oper;
+    use crate::Parse;
+
+    #[test]
+    fn oper1() {
+        assert_eq!(Oper::parse("+").unwrap().1, Oper::Add);
+    }
+
+    #[test]
+    fn oper2() {
+        assert_eq!(Oper::parse("-").unwrap().1, Oper::Sub);
+    }
+}

@@ -1,29 +1,37 @@
 use nom::{
     bytes::complete::tag,
-    combinator::{map, opt},
-    sequence::{delimited, separated_pair},
+    combinator::opt,
+    sequence::{delimited, pair},
 };
 
-use crate::{literal, Ident, ParseNom};
+use crate::{literal::Byte, util::ws0, Ident, Oper, ParseNom};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Pointer {
     pub var: Ident,
-    pub offset: Option<usize>,
+    pub offset: Option<(Oper, Byte)>,
 }
 
 impl ParseNom for Pointer {
     fn parse(input: crate::Span) -> crate::IResult<Self> {
         let (input, (var, offset)) = delimited(
             tag("{"),
-            separated_pair(
-                Ident::parse,
-                tag("+"),
-                map(opt(literal::Byte::parse), |o| o.map(|b| b.0 as usize)),
-            ),
+            pair(Ident::parse, opt(pair(ws0(Oper::parse), Byte::parse))),
             tag("}"),
         )(input)?;
         Ok((input, Self { var, offset }))
     }
 }
+
+impl std::fmt::Display for Pointer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{}", self.var)?;
+        if let Some((op, off)) = &self.offset {
+            write!(f, " {op} {off}")?;
+        }
+        write!(f, "}}")
+    }
+}
+
+// TODO: implement tests for pointers if they are going to stay in the assembly language

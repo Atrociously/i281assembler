@@ -1,27 +1,13 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-
 use nom::sequence::separated_pair;
 
 use crate::{keyword, util::ws_end1, Ident, Literal, ParseNom};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Variable {
     pub ident: Ident,
     pub value: Literal,
     pub data_addr: usize,
-}
-
-static CURRENT_ADDR: AtomicUsize = AtomicUsize::new(0);
-
-impl Variable {
-    fn inc(amt: usize) -> usize {
-        CURRENT_ADDR.fetch_add(amt, Ordering::Relaxed)
-    }
-
-    pub(crate) fn reset() {
-        CURRENT_ADDR.store(0, Ordering::Relaxed);
-    }
 }
 
 impl ParseNom for Variable {
@@ -31,14 +17,42 @@ impl ParseNom for Variable {
             ws_end1(keyword::Byte::parse),
             Literal::parse,
         )(input)?;
-        let size = value.size_of();
         Ok((
             input,
             Variable {
                 ident,
                 value,
-                data_addr: Self::inc(size),
+                data_addr: 0,
             },
         ))
+    }
+}
+
+impl std::fmt::Display for Variable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self { ident, value, .. } = self;
+        write!(f, "{ident} {} {value}", keyword::Byte)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Variable;
+    use crate::{literal::Byte, Parse};
+
+    #[test]
+    fn variable1() {
+        let expected = Variable {
+            ident: "a".into(),
+            value: Byte(10).into(),
+            data_addr: 0,
+        };
+        assert_eq!(Variable::parse("a BYTE 10").unwrap().1, expected);
+    }
+
+    #[test]
+    #[should_panic]
+    fn variable2() {
+        Variable::parse("a 10").unwrap(); // missing keyword
     }
 }

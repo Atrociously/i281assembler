@@ -3,7 +3,7 @@
 ; Assembly version
 
 .data
-array   BYTE    -2, 3, 4, 1
+array   BYTE    2, 3, 4, 1
 last    BYTE    3
 i       BYTE    ?
 
