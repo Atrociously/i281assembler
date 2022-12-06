@@ -11,7 +11,7 @@ use miette::IntoDiagnostic;
 #[derive(clap::ValueEnum, Clone, Copy, Debug, Default)]
 enum EmitKind {
     Ast,
-    AsmIr,
+    Ir,
     #[default]
     Verilog,
 }
@@ -32,13 +32,13 @@ fn main() -> miette::Result<()> {
     let input = std::fs::read_to_string(args.filename).into_diagnostic()?;
     let input = input.as_str();
 
-    let ast = Root::parse(input)?;
+    let ast = Root::parse(input).map_err(|e| dbg!(e))?;
     match args.emit {
         EmitKind::Ast => {
             let output = std::io::stdout().lock();
             serde_json::to_writer(output, &ast).into_diagnostic()?;
         }
-        EmitKind::AsmIr => {
+        EmitKind::Ir => {
             let output = std::io::stdout().lock();
             let mut err = std::io::stderr().lock();
             let ir = i281_compiler::analyze(&mut err, ast)?;

@@ -11,7 +11,7 @@ pub struct Root {
 
 impl Root {
     pub fn parse(input: &str) -> Result<Self, ParseError<'static>> {
-        <Self as ParseNom>::parse(Span::new(input))
+        <Self as ParseNom>::parse(Span::new_extra(input, input))
             .map(|(_, out)| out)
             .map_err(|err| match err {
                 nom::Err::Failure(e) | nom::Err::Error(e) => e,

@@ -26,7 +26,8 @@ pub use root::Root;
 pub use variable::Variable;
 
 pub use error::ParseError;
-pub type Span<'a> = nom_locate::LocatedSpan<&'a str>;
+// The custom error span this will contain the input and extra will be the full input
+pub type Span<'a> = nom_locate::LocatedSpan<&'a str, &'a str>;
 pub type IResult<'a, O> = nom::IResult<Span<'a>, O, ParseError<'a>>;
 
 // this is an implementation trait used internally
@@ -49,6 +50,6 @@ where
     T: ParseNom,
 {
     fn parse(input: &str) -> IResult<Self> {
-        <T as ParseNom>::parse(Span::new(input))
+        <T as ParseNom>::parse(Span::new_extra(input, input))
     }
 }
