@@ -7,7 +7,7 @@ use nom::{
 
 use crate::{
     keyword,
-    util::{always_fails, many0_endings, ws0},
+    util::{always_fails, many0_endings, ws0, many1_endings, ws_start0},
     IResult, Instruction, Label, ParseNom, Span, Variable,
 };
 
@@ -57,11 +57,10 @@ impl ParseNom for DataSegment {
             delimited(
                 many0_endings,
                 preceded(tag("."), keyword::Data::parse),
-                always_fails(many0_endings),
+                many1_endings,
             ),
-            always_fails(many1(terminated(ws0(Variable::parse), many0_endings))),
+            always_fails(many1(terminated(ws_start0(Variable::parse), many1_endings))),
         )(input)?;
-
         let mut data_addr: usize = 0;
         for var in variables.iter_mut() {
             var.data_addr = data_addr;
@@ -77,11 +76,11 @@ impl ParseNom for CodeSegment {
             delimited(
                 many0_endings,
                 preceded(tag("."), keyword::Code::parse),
-                always_fails(many0_endings),
+                always_fails(many1_endings),
             ),
             always_fails(many1(pair(
                 opt(terminated(ws0(Label::parse), many0_endings)),
-                terminated(ws0(Instruction::parse), many0_endings),
+                terminated(ws_start0(Instruction::parse), many1_endings),
             ))),
         )(input)?;
 

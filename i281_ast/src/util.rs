@@ -61,7 +61,7 @@ where
 {
     value(
         (),
-        preceded(opt(ws_start0(comma_eol_comment)), many1_count(line_ending)),
+        terminated(opt(ws_start0(comma_eol_comment)), line_ending),
     )(input)
 }
 
@@ -70,6 +70,13 @@ where
     E: nom::error::ParseError<Span<'a>>,
 {
     value((), many0_count(ending1))(input)
+}
+
+pub(crate) fn many1_endings<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
+where
+    E: nom::error::ParseError<Span<'a>>,
+{
+    value((), many1_count(ending1))(input)
 }
 
 pub(crate) fn always_fails<I, O, F, E>(mut f: F) -> impl FnMut(I) -> nom::IResult<I, O, E>

@@ -25,7 +25,6 @@ fn non_alphanum(c: char) -> bool {
 
 impl ParseNom for Register {
     fn parse(input: crate::Span) -> crate::IResult<Self> {
-        // TODO make sure we check for JUST a SINGLE letter
         let (input, c) = take_till1(non_alphanum)(input)?;
         match c.to_uppercase().as_str() {
             "A" => Ok((input, Self::A)),

@@ -12,14 +12,18 @@ The project is structured into several components:
 - Command Line Interface
 
 The separation of these components makes the compiler more pluggable for using in other rust projects / partial compilation.
-There may be goals of making a crate that is a web assembly library for use in web or other languages/ projects.
-
+There may be goals of making a crate that is a web assembly library for use in web or other languages / projects.
 
 ## How to use
 1. First check the github releases page for pre-compiled binaries of the compiler for your os, or compile from source
-2. Once you have an executable you can run `compile281 --help` to get a list of capabilities of the compiler
+2. Once you have an executable you can run `compile281 --help` to get a list of options for the compiler command
 3. To compile an assembly project run `compile281 [YOUR ASSEMBLY FILE]` and the results will be in the `./build/` directory
 
+## Compiling From Source
+1. Make sure you have rust [installed](https://www.rust-lang.org/tools/install).
+2. Clone the repo to your local machine or unzip it from the archive
+3. Run `cargo build --release` in the project directory
+4. Your compiled binary will be located in *target/release/compile281*
 
 ## Other Info
 - To run unit tests use `cargo test --workspace` to run all tests within the workspace
