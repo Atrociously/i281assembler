@@ -7,6 +7,7 @@ use crate::{literal, Address, IResult, Ident, OpCode, Pointer, Register};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(tag = "opcode", content = "args", rename_all = "UPPERCASE"))]
 pub enum Instruction {
     NoOp,
     InputC(Address),

@@ -91,6 +91,7 @@ macro_rules! type_enum {
     (@base $name:ident $(<$($lif:tt),+>)? {$($variant:ident $(<$($varlif:tt),+>)?),*}) => {
         #[derive(Clone, Debug, PartialEq, Eq)]
         #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+        #[cfg_attr(feature = "serde", serde(tag = "kind", content = "value", rename_all = "snake_case"))]
         pub enum $name $(<$($lif),+>)? {
             $($variant($variant $(<$($varlif),+>)? )),*
         }

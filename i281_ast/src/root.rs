@@ -1,12 +1,12 @@
 use nom::{branch::permutation, combinator::opt};
 
-use crate::{directive, ParseError, ParseNom, Span};
+use crate::{CodeSegment, DataSegment, ParseError, ParseNom, Span};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Root {
-    pub data: Option<directive::Data>,
-    pub code: directive::Code,
+    pub data: Option<DataSegment>,
+    pub code: CodeSegment,
 }
 
 impl Root {
@@ -24,7 +24,7 @@ impl Root {
 impl ParseNom for Root {
     fn parse(input: crate::Span) -> crate::IResult<Self> {
         let (input, (data, code)) =
-            permutation((opt(directive::Data::parse), directive::Code::parse))(input)?;
+            permutation((opt(DataSegment::parse), CodeSegment::parse))(input)?;
         Ok((input, Self { data, code }))
     }
 }

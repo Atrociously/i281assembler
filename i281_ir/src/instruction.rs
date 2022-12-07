@@ -4,6 +4,7 @@ use crate::{
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(tag = "opcode", rename_all = "UPPERCASE"))]
 pub enum Instruction {
     NoOp,
     InputC {

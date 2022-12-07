@@ -25,6 +25,7 @@ impl AsRef<Address> for Address {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(tag = "kind", content = "value", rename_all = "snake_case"))]
 pub enum AddressItem {
     Var(Ident),
     Reg(Register),
@@ -64,6 +65,7 @@ impl AddressItem {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(tag = "kind", rename_all = "snake_case"))]
 pub enum AddressExpr {
     Item(AddressItem),
     Expr {

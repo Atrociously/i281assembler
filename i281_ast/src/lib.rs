@@ -4,7 +4,7 @@
 mod primitive;
 
 mod address;
-pub mod directive;
+mod segment;
 mod instruction;
 mod label;
 mod pointer;
@@ -17,7 +17,7 @@ mod util;
 pub(crate) use util::type_enum;
 
 pub use address::{Address, AddressExpr, AddressItem};
-pub use directive::Directive;
+pub use segment::{CodeSegment, DataSegment};
 pub use instruction::Instruction;
 pub use label::Label;
 pub use pointer::Pointer;
