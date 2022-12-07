@@ -4,11 +4,11 @@
 mod primitive;
 
 mod address;
-mod segment;
 mod instruction;
 mod label;
 mod pointer;
 mod root;
+mod segment;
 mod variable;
 
 mod error;
@@ -17,12 +17,12 @@ mod util;
 pub(crate) use util::type_enum;
 
 pub use address::{Address, AddressExpr, AddressItem};
-pub use segment::{CodeSegment, DataSegment};
 pub use instruction::Instruction;
 pub use label::Label;
 pub use pointer::Pointer;
 pub use primitive::{keyword, literal, opcode, Ident, Literal, OpCode, Oper, Register};
 pub use root::Root;
+pub use segment::{CodeSegment, DataSegment};
 pub use variable::Variable;
 
 pub use error::ParseError;

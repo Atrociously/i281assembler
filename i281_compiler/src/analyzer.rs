@@ -128,17 +128,19 @@ impl Analyzer {
                     Some(Oper::Add) => match addr.checked_add(value) {
                         Some(v) => addr = v,
                         None => {
-                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            self.diagnostics
+                                .push(Error::AddressOOB { ins: ins.clone() }.into());
                             return Err(Failure::Skip);
                         }
-                    }
+                    },
                     Some(Oper::Sub) => match addr.checked_sub(value) {
                         Some(v) => addr = v,
                         None => {
-                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            self.diagnostics
+                                .push(Error::AddressOOB { ins: ins.clone() }.into());
                             return Err(Failure::Skip);
                         }
-                    }
+                    },
                     _ => addr = value,
                 }
                 Result::Ok((addr, next_oper.copied()))
@@ -199,17 +201,19 @@ impl Analyzer {
                     Some(Oper::Add) => match addr.checked_add(value) {
                         Some(v) => addr = v,
                         None => {
-                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            self.diagnostics
+                                .push(Error::AddressOOB { ins: ins.clone() }.into());
                             return Err(Failure::Skip);
                         }
-                    }
+                    },
                     Some(Oper::Sub) => match addr.checked_sub(value) {
                         Some(v) => addr = v,
                         None => {
-                            self.diagnostics.push(Error::AddressOOB { ins: ins.clone() }.into());
+                            self.diagnostics
+                                .push(Error::AddressOOB { ins: ins.clone() }.into());
                             return Err(Failure::Skip);
                         }
-                    }
+                    },
                     _ => addr = value,
                 }
                 Result::Ok((addr, next_oper.copied()))

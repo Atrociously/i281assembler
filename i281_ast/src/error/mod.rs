@@ -8,10 +8,7 @@ use crate::Span;
 
 #[derive(Clone, Error, Debug, Diagnostic)]
 #[error("Failure to parse input on line: {line_number}")]
-#[diagnostic(
-    code(ast::parse_error),
-    help("double check your syntax")
-)]
+#[diagnostic(code(ast::parse_error), help("double check your syntax"))]
 pub struct ParseError<'b> {
     #[source_code]
     input: Cow<'b, str>,
@@ -43,8 +40,10 @@ impl<'a> ParseError<'a> {
 impl<'a> nom::error::ParseError<Span<'a>> for ParseError<'a> {
     fn from_error_kind(input: Span<'a>, kind: ErrorKind) -> Self {
         let line_number = input.location_line();
-        let start = input.location_offset();
-        let end = 0;
+        let end = input.location_offset();
+        let start = end;
+        //let start = input.extra[..end].rfind(' ').unwrap_or(0);
+        let end = end - start;
         Self {
             input: Cow::Borrowed(input.extra),
             line_number,

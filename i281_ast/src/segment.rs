@@ -2,12 +2,12 @@ use nom::{
     bytes::complete::tag,
     combinator::opt,
     multi::many1,
-    sequence::{delimited, pair, preceded, terminated},
+    sequence::{delimited, pair, preceded, terminated}, branch::alt,
 };
 
 use crate::{
     keyword,
-    util::{always_fails, many0_endings, ws0, many1_endings, ws_start0},
+    util::{always_fails, many0_endings, ws_start0, eof},
     IResult, Instruction, Label, ParseNom, Span, Variable,
 };
 
@@ -57,9 +57,9 @@ impl ParseNom for DataSegment {
             delimited(
                 many0_endings,
                 preceded(tag("."), keyword::Data::parse),
-                many1_endings,
+                many0_endings,
             ),
-            always_fails(many1(terminated(ws_start0(Variable::parse), many1_endings))),
+            always_fails(many1(terminated(ws_start0(Variable::parse), alt((many0_endings, eof))))),
         )(input)?;
         let mut data_addr: usize = 0;
         for var in variables.iter_mut() {
@@ -76,11 +76,11 @@ impl ParseNom for CodeSegment {
             delimited(
                 many0_endings,
                 preceded(tag("."), keyword::Code::parse),
-                always_fails(many1_endings),
+                always_fails(many0_endings),
             ),
             always_fails(many1(pair(
-                opt(terminated(ws0(Label::parse), many0_endings)),
-                terminated(ws_start0(Instruction::parse), many1_endings),
+                opt(terminated(ws_start0(Label::parse), many0_endings)),
+                terminated(ws_start0(Instruction::parse), alt((many0_endings, eof))),
             ))),
         )(input)?;
 

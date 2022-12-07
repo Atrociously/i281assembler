@@ -7,7 +7,10 @@ use crate::{literal, Address, IResult, Ident, OpCode, Pointer, Register};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(tag = "opcode", content = "args", rename_all = "UPPERCASE"))]
+#[cfg_attr(
+    feature = "serde",
+    serde(tag = "opcode", content = "args", rename_all = "UPPERCASE")
+)]
 pub enum Instruction {
     NoOp,
     InputC(Address),
@@ -150,7 +153,8 @@ impl Instruction {
 impl ParseNom for Instruction {
     fn parse(input: Span) -> IResult<Self> {
         let (input, opcode) = ws_end1(OpCode::parse)(input)?;
-        always_fails(move |input| Self::parse_after_opcode(opcode.clone(), input))(input)
+        let (input, ins) = always_fails(move |input| Self::parse_after_opcode(opcode.clone(), input))(input)?;
+        return Ok((input, ins));
     }
 }
 

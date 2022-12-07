@@ -98,7 +98,11 @@ mod tests {
             let path = entry.path();
             let input = std::fs::read_to_string(path).into_diagnostic()?;
 
-            let _root = Root::parse(&input).map_err(ParseError::into_static)?;
+            let mut sink = std::io::sink();
+
+            let root = Root::parse(&input).map_err(ParseError::into_static)?;
+            let _ir = i281_compiler::analyze(&mut sink, root)?;
+            // running i281_compiler::compile_verilog() can only emit io errors
         }
         Ok(())
     }

@@ -52,7 +52,7 @@ fn comma_eol_comment<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
 where
     E: nom::error::ParseError<Span<'a>>,
 {
-    value((), pair(tag(";"), opt(is_not("\n\r"))))(input)
+    value((), pair(tag(";"), opt(is_not("\n"))))(input)
 }
 
 pub(crate) fn ending1<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
@@ -61,7 +61,7 @@ where
 {
     value(
         (),
-        terminated(opt(ws_start0(comma_eol_comment)), line_ending),
+        terminated(opt(comma_eol_comment), line_ending),
     )(input)
 }
 
@@ -69,14 +69,7 @@ pub(crate) fn many0_endings<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, ()
 where
     E: nom::error::ParseError<Span<'a>>,
 {
-    value((), many0_count(ending1))(input)
-}
-
-pub(crate) fn many1_endings<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
-where
-    E: nom::error::ParseError<Span<'a>>,
-{
-    value((), many1_count(ending1))(input)
+    ws_start0(value((), many0_count(ending1)))(input)
 }
 
 pub(crate) fn always_fails<I, O, F, E>(mut f: F) -> impl FnMut(I) -> nom::IResult<I, O, E>
@@ -92,6 +85,13 @@ where
             _ => e,
         })
     }
+}
+
+pub(crate) fn eof<'a, E>(input: Span<'a>) -> nom::IResult<Span<'a>, (), E>
+where
+    E: nom::error::ParseError<Span<'a>>,
+{
+    value((), nom::combinator::eof)(input)
 }
 
 macro_rules! type_enum {
