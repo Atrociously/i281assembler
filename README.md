@@ -28,6 +28,7 @@ There may be goals of making a crate that is a web assembly library for use in w
 ## Other Info
 - To run unit tests use `cargo test --workspace` to run all tests within the workspace
 - The `examples` directory has as many assembly examples as I had access to
+- Use [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) to make sure all libraries used are MIT licensed
 
 ## Libraries used and reasons
 - [nom](https://github.com/Geal/nom) it provides a foundation for writing parser-combinators
